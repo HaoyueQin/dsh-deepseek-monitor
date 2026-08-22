@@ -1,0 +1,7 @@
+# dsh-deepseek-monitor bundle patch
+#
+# Published-package patch layer: `dsh plugin --profile <name> add dsh-deepseek-monitor`
+# appends this package to the profile bundle stack and merges this insert.
+- insert:
+    - id: deepseek-monitor
+      name: 'dsh-deepseek-monitor'
