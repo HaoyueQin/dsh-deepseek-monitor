@@ -215,7 +215,7 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   // Keep the open panel fresh: poll the HOST CACHE at the configured refresh
   // interval (status reads never touch the upstream API — the refresher owns
   // that cadence). Without this the expanded card froze at its mount-time
-  // snapshot while the chip and the stats band kept updating.
+  // snapshot while the row chip and the composer chip kept updating.
   useEffect(() => {
     const seconds = prefs?.refreshIntervalSeconds
     if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return

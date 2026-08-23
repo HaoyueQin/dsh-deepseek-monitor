@@ -1,15 +1,16 @@
 /**
- * dsh-deepseek-monitor browser half: registers the conversation composer.dock
- * balance item (official slot) and the DeepSeek provider-row augmentation
- * engine (chip + 用量 button + expandable panel inside 设置→模型→DeepSeek).
+ * dsh-deepseek-monitor browser half: registers the conversation input-row
+ * balance chip (official `conversation.input.right` seat — rendered left of
+ * the model name) and the DeepSeek provider-row augmentation engine (chip +
+ * 用量 button + expandable panel inside 设置→模型→DeepSeek).
  * No standalone settings section by design — monitoring lives in the row.
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
-// Type-only: pulls the conversation SlotMap merge ('conversation.composer.dock').
+// Type-only: pulls the conversation SlotMap merge ('conversation.input.right').
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: pulls ctx.locale into this program.
 import type {} from '@deepseek-ai/dsh-client-locale/client'
-import { BalanceDock } from './BalanceDock.tsx'
+import { BalanceChip } from './BalanceChip.tsx'
 import { setupAugment } from './augment.tsx'
 import { LOCALE_NS, en, zh, zhTW, type DeepSeekMonitorKey } from './locales.ts'
 
@@ -31,13 +32,16 @@ export function apply(ctx: ClientContext): void {
     return () => { offZh(); offEn(); offZhTw() }
   }, 'dsh-deepseek-monitor: dictionaries')
 
-  // The conversation stats-band balance item (official composer.dock seat).
-  ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({
-    name: 'conversation.composer.dock',
+  // The composer tool-row balance chip (official input.right seat). The
+  // host's trailing group renders these entries left of the model name, so
+  // the chip sits exactly between the left chrome and the model select with
+  // the row's standard 12px gap — a real flex child, no host-DOM surgery.
+  ctx.slots.inject('conversation.input.right', () => ctx.slots.register({
+    name: 'conversation.input.right',
     id: 'deepseek-balance',
     order: 10,
     locale: LOCALE_NS,
-  }, BalanceDock))
+  }, BalanceChip))
 
   // The provider-row augmentation. The locale service face is read through a
   // narrow structural cast (getLocale().active / subscribe), matching what the

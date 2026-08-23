@@ -9,7 +9,7 @@ English | [简体中文](./README.md)
 [![dsh plugin · web](https://img.shields.io/badge/dsh--plugin-web-4D6BFE)](https://github.com/DeepSeek-ai/DeepSeek-Harness)
 [![node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
-A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring** of [DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) into dsh — embedded in the "Settings → Models → DeepSeek" provider card, with a live balance item in the conversation stats band.
+A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring** of [DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) into dsh — embedded in the "Settings → Models → DeepSeek" provider card, with a live balance item in the composer tool row (left of the model name).
 
 ![Account details panel preview](docs/images/account-details-panel.png)
 
@@ -28,11 +28,12 @@ A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring*
   - **Platform token setup**: two acquisition channels — ① one-click console capture script (paste on the signed-in platform page, token pops up); ② manual paste via DevTools. Verified against the platform API before being stored write-only
   - **Settings**: auto-refresh toggle & interval (≥60s), low-balance alert & threshold, reload / clear cache
 
-### Conversation stats-band balance item
+### Composer tool-row balance item
 
-- Mounted on the official `conversation.composer.dock` slot — same line, same typography as turns/steps, latency and cache-hit stats
-- Shown only in sessions whose latest route is an official DeepSeek model; appears and disappears with the stats band
-- The chip and the stats band poll the host cache every 60s and the expanded panel follows the configured interval; actual upstream refreshes are driven by the auto-refresh interval above (≥60s — only the host-side timer ever calls upstream)
+- Mounted on the official `conversation.input.right` slot — rendered **left of the model name, before the send button**, matching the sibling controls' typography (28px height / 13px font / medium weight)
+- Shown only while the session's latest route is an official DeepSeek model; hidden on the session-less hero screen
+- Coloring policy: the currency symbol keeps the neutral gray; the NUMBER turns green above zero (`state-success-primary`) and red at or below zero (`state-error-primary`)
+- The chip polls the host cache every 60s and the expanded panel follows the configured interval; actual upstream refreshes are driven by the auto-refresh interval above (≥60s — only the host-side timer ever calls upstream)
 
 ## Data & security
 

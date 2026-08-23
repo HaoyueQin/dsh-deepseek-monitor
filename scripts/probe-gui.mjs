@@ -5,8 +5,9 @@
  *  2. Models page: the DeepSeek row carries a 「账户明细」 button LEFT of 编辑
  *     with matching chrome (same classes), a balance chip near the name, and
  *     clicking the button opens a structured panel (balance value / sections).
- *  3. composer.dock item: placement on the stats row, typography parity,
- *     live balance value, and its true visibility gate.
+ *  3. composer tool-row chip: placement INSIDE the trailing group (left of
+ *     the model name), typography parity, live balance value, and the real
+ *     flex gap to the neighboring control.
  *
  * Run: node scripts/probe-gui.mjs   (env DSH_URL overrides)
  */
@@ -131,34 +132,41 @@ try {
   settingsFacts = { error: String(error).slice(0, 300) }
 }
 
-// ── 3. composer.dock facts ────────────────────────────────────────────────
-let dockFacts = null
+// ── 3. composer tool-row chip facts ───────────────────────────────────────
+let chipFacts = null
 try {
   const candidates = page.locator('[class*="session"], [data-slot*="session"], li, a').filter({ hasText: /进行中|dsh-DeepSeekMonitor|dsh\b/ }).first()
   await candidates.click({ timeout: 8000 })
   await page.waitForTimeout(3500)
 } catch { /* conversation may already be open */ }
 
-dockFacts = await page.evaluate(() => {
-  const anchor = document.querySelector('[data-dsm-dock]')
-  if (anchor === null) return { present: false }
-  const prev = anchor.previousElementSibling
-  const band = prev?.querySelector('[data-dsm-band]') ?? null
+chipFacts = await page.evaluate(() => {
+  const chip = document.querySelector('[data-dsm-composer-chip]')
+  if (chip === null) return { present: false }
+  // The host composer card carries a data marker; its trailing flex group is
+  // the CSS-module class ending in _trailing (hash_local convention).
+  const card = document.querySelector('[data-composer-card]')
+  const trailing = card !== null
+    ? [...card.querySelectorAll('div')].find((d) => /(^|\s)\S*_trailing(\s|$)/.test(d.className))
+    : null
+  const next = chip.nextElementSibling
+  const gap = next !== null
+    ? Math.round(next.getBoundingClientRect().left - chip.getBoundingClientRect().right)
+    : null
   return {
     present: true,
-    anchorHidden: getComputedStyle(anchor).display === 'none',
-    alive: anchor.getAttribute('data-dsm-alive'),
-    provider: anchor.getAttribute('data-dsm-provider'),
-    model: anchor.getAttribute('data-dsm-model'),
-    prevText: prev?.textContent?.slice(0, 140) ?? null,
-    // Gate expectation on a NON-deepseek session: the band must be ABSENT.
-    bandPresent: band !== null,
-    bandText: band?.textContent ?? null,
-    statsFontSize: prev !== null ? getComputedStyle(prev).fontSize : null,
-    rectTop: Math.round(anchor.getBoundingClientRect().top),
-    prevRectTop: prev !== null ? Math.round(prev.getBoundingClientRect().top) : null,
+    provider: chip.getAttribute('data-dsm-provider'),
+    model: chip.getAttribute('data-dsm-model'),
+    text: chip.textContent,
+    insideTrailing: trailing !== null && trailing.contains(chip),
+    // Gate expectation on a NON-deepseek session: the chip must be ABSENT.
+    nextSibling: next !== null ? { tag: next.tagName, cls: String(next.className).slice(0, 60) } : null,
+    gapPx: gap,
+    heightPx: Math.round(chip.getBoundingClientRect().height),
+    fontSize: getComputedStyle(chip).fontSize,
+    fontWeight: getComputedStyle(chip).fontWeight,
   }
 })
 
-console.log(JSON.stringify({ settingsFacts, dockFacts, pageErrors, consoleErrors: consoleErrors.slice(0, 20) }, null, 2))
+console.log(JSON.stringify({ settingsFacts, chipFacts, pageErrors, consoleErrors: consoleErrors.slice(0, 20) }, null, 2))
 await browser.close()

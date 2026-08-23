@@ -9,7 +9,7 @@
 [![dsh plugin · web](https://img.shields.io/badge/dsh--plugin-web-4D6BFE)](https://github.com/DeepSeek-ai/DeepSeek-Harness)
 [![node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
-DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) 的**余额与用量监控**能力移植进 dsh —— 集成到「设置 → 模型 → DeepSeek」供应商卡片内，并在对话统计带显示实时余额。
+DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) 的**余额与用量监控**能力移植进 dsh —— 集成到「设置 → 模型 → DeepSeek」供应商卡片内，并在输入框工具行（模型名称左侧）显示实时余额。
 
 ![账户明细面板预览](docs/images/account-details-panel.png)
 
@@ -28,11 +28,12 @@ DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://githu
   - **平台 Token 配置**：双通道获取——①一键复制控制台抓取脚本（登录平台页粘贴回车即捕获）；②手动 F12 粘贴。保存前先经平台接口验活，凭据只写不读回
   - **设置**：自动刷新开关与间隔（≥60s）、低余额提醒与阈值、重载缓存 / 清除缓存
 
-### 对话统计带余额项
+### 输入框工具行余额项
 
-- 挂载于官方 `conversation.composer.dock` 槽位，与轮数步数 / 耗时 / 缓存命中率等统计项**同一行、同排版**
-- 仅在使用 DeepSeek 官方模型的会话中显示，跟随统计带出现与消失
-- 余额 chip 与统计带固定每 60 秒轮询一次宿主缓存；展开面板按设置的刷新间隔轮询；上游 API 的实际刷新节奏由设置中的自动刷新间隔统一驱动（≥60s，仅宿主侧定时器会请求上游）
+- 挂载于官方 `conversation.input.right` 槽位，渲染在**模型名称左侧、发送键之前**，与模型选择等控件同排版（28px 行高 / 13px 字号 / medium 字重）
+- 仅在当前会话最近一次路由为 DeepSeek 官方模型时显示；新会话首屏（无会话）自动隐藏
+- 配色策略：币种符号保持默认灰色；余额数字 **> 0 显示绿色**（`state-success-primary`）、**≤ 0 显示红色**（`state-error-primary`）
+- 余额 chip 固定每 60 秒轮询一次宿主缓存；展开面板按设置的刷新间隔轮询；上游 API 的实际刷新节奏由设置中的自动刷新间隔统一驱动（≥60s，仅宿主侧定时器会请求上游）
 
 ## 数据与安全
 
