@@ -1,0 +1,61 @@
+# Release publishing: pushing a `v*` tag builds the plugin, runs the test
+# suite, packs the npm tarball, and publishes a GitHub release with
+# auto-generated notes and the tarball attached. The tag is the trigger and
+# the release title; nothing else needs manual input.
+#
+# The tag name must match the package version (tests/manifest-consistency.spec
+# locks package.json, dsh.plugin.json and PLUGIN_VERSION to each other), so
+# bump the version first, then: git tag v<version> && git push --tags.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm must be on PATH before setup-node's cache hook runs.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # A tag that drifts from the package version would publish a release
+      # whose tarball and title disagree — refuse it up front.
+      - name: Verify tag matches package version
+        run: node -e "const p=require('./package.json'); const tag=process.env.GITHUB_REF_NAME; if (tag !== 'v'+p.version) { console.error('tag '+tag+' does not match package version v'+p.version); process.exit(1) } console.log('tag matches v'+p.version)"
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+      - name: Pack
+        run: |
+          mkdir -p dist
+          pnpm pack --pack-destination dist
+          echo "TARBALL=$(ls dist/*.tgz)" >> "$GITHUB_ENV"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME" "$TARBALL"
