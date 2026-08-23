@@ -116,7 +116,7 @@ const fmtTokensShort = (n: number): string => {
   if (n < 1_000_000) return `${Math.round(n / 100) / 10}K`
   return `${Math.round(n / 100_000) / 10}M`
 }
-const fmtMoney = (n: number): string => `¥${n.toFixed(2)}`
+const fmtMoney = (n: number, symbol = '¥'): string => `${symbol}${n.toFixed(2)}`
 const todayStr = (): string => {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
@@ -297,6 +297,10 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const balance = status?.balance ?? null
   const tokenOn = status?.platformToken.configured ?? false
   const keyOn = status?.apiKey.configured ?? false
+  // Costs follow the ACCOUNT currency the balance snapshot names (a USD
+  // account shows $ amounts); without a snapshot there is no fact to lean on
+  // and the display falls back to the platform's billing default ¥.
+  const costSymbol = balance !== null ? currencySymbol(balance.currency) : '¥'
 
   // Derived month facts (DSM DashboardPanel fold). ONLY the retired legacy
   // pair is filtered —every other model the platform reports renders (the
@@ -373,7 +377,7 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
           </span>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 13 }}>{fmtMoney(model.cost)}</div>
+          <div style={{ fontWeight: 600, fontSize: 13 }}>{fmtMoney(model.cost, costSymbol)}</div>
         </div>
       </div>
     )
@@ -419,11 +423,11 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
                         <div style={{ border: '1px solid var(--dsw-alias-border-muted, rgba(127,127,127,0.18))', borderRadius: 8, padding: '6px 10px' }}>
                           <div style={mutedText}>{d.todayCost}</div>
-                          <div style={{ fontWeight: 600 }}>{today !== null ? fmtMoney(today.totalCost) : '¥0.00'}</div>
+                          <div style={{ fontWeight: 600 }}>{today !== null ? fmtMoney(today.totalCost, costSymbol) : `${costSymbol}0.00`}</div>
                         </div>
                         <div style={{ border: '1px solid var(--dsw-alias-border-muted, rgba(127,127,127,0.18))', borderRadius: 8, padding: '6px 10px' }}>
                           <div style={mutedText}>{d.monthCostLabel}</div>
-                          <div style={{ fontWeight: 600 }}>{usage !== null ? fmtMoney(usage.monthCost) : '—'}</div>
+                          <div style={{ fontWeight: 600 }}>{usage !== null ? fmtMoney(usage.monthCost, costSymbol) : '—'}</div>
                         </div>
                       </div>
                     )
@@ -524,7 +528,7 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
                                         {`${d.legendOutput} ${fmtInt(point.response)}`}
                                       </div>
                                       <div style={{ marginTop: 3, paddingTop: 3, borderTop: '1px solid rgba(127,127,127,0.25)' }}>
-                                        {`${d.colCacheHit} ${point.hit + point.miss > 0 ? ((point.hit / (point.hit + point.miss)) * 100).toFixed(1) : '0'}% · ${d.colCost} ¥${point.cost.toFixed(2)}`}
+                                        {`${d.colCacheHit} ${point.hit + point.miss > 0 ? ((point.hit / (point.hit + point.miss)) * 100).toFixed(1) : '—'}% · ${d.colCost} ${costSymbol}${point.cost.toFixed(2)}`}
                                       </div>
                                     </div>
                                   )
@@ -551,7 +555,7 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, flexWrap: 'wrap', gap: 6 }}>
                         <span style={mutedText}>
-                          {`${hitRate}% · ${monthTotal > 0 ? fmtTokensShort(monthTotal) : '—'}${usage.monthCost > 0 ? ` · ¥${usage.monthCost.toFixed(2)}` : ''}`}
+                          {`${hitRate}% · ${monthTotal > 0 ? fmtTokensShort(monthTotal) : '—'}${usage.monthCost > 0 ? ` · ${costSymbol}${usage.monthCost.toFixed(2)}` : ''}`}
                         </span>
                         <span style={{ display: 'inline-flex', gap: 10, alignItems: 'center' }}>
                           {([['legendHit', palette.hit], ['legendMiss', palette.miss], ['legendOutput', palette.response]] as const).map(([key, color]) => (
