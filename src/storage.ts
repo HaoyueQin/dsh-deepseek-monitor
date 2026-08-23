@@ -85,10 +85,10 @@ export const monitorDomain = defineDomain({
   tables: {
     /** Single row (key `prefs`): user preferences. */
     prefs: domainTable<'prefs', MonitorPrefs>(prefsSchema),
-    /** Single row (key `balance`): last known balance snapshot. */
-    balance: domainTable<'balance', BalanceSnapshot>(balanceSchema),
-    /** Per-month rows (key `YYYY-M`). */
-    usage: domainTable<string, UsageResult>(usageResultSchema),
+    /** Data cache: the balance snapshot under key `balance` and per-month
+     *  usage results under `usage:YYYY-M`. One table on purpose — the
+     *  previously declared dedicated `balance` table was never written. */
+    usage: domainTable<string, UsageResult | BalanceSnapshot>(usageResultSchema.or(balanceSchema)),
     /** Single row (key `index`): stored usage-month keys. */
     index: domainTable<'index', Record<string, boolean>>(z.record(z.string(), z.boolean())),
   },

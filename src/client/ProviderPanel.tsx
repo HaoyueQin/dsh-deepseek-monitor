@@ -242,7 +242,7 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
     setBusy(true); setNotice(null)
     void postToken('set', tokenInput.trim())
       .then(() => {
-        setTokenInput(''); setNotice({ kind: 'ok', text: d.saveOk }); loadStatus(); setMonthOffset(o => o)
+        setTokenInput(''); setNotice({ kind: 'ok', text: d.saveOk }); loadStatus()
       })
       .catch((error: unknown) => { setNotice({ kind: 'error', text: error instanceof Error ? error.message : String(error) }) })
       .finally(() => { setBusy(false) })
@@ -270,7 +270,6 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
       .then(() => {
         setNotice({ kind: 'ok', text: action === 'clear' ? d.cacheCleared : d.reloaded })
         loadStatus()
-        setMonthOffset(o => o)
       })
       .catch((error: unknown) => { setNotice({ kind: 'error', text: error instanceof Error ? error.message : String(error) }) })
       .finally(() => { setBusy(false) })
