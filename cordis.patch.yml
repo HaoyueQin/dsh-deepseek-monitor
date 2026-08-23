@@ -2,6 +2,13 @@
 #
 # Published-package patch layer: `dsh plugin --profile <name> add dsh-deepseek-monitor`
 # appends this package to the profile bundle stack and merges this insert.
+#
+# Aggregate double-mount guard: aggregate bundles may already mount this
+# package under their own entry id. Two mounts register /dsm/api twice and
+# fail the whole plugin tree at boot ("duplicate prefix route"). The !!js
+# expression backs THIS row off when another *enabled* entry already mounts
+# dsh-deepseek-monitor; the aggregate instance then owns the monitoring.
 - insert:
     - id: deepseek-monitor
       name: 'dsh-deepseek-monitor'
+      disabled: !!js "[...ctx.loader.entries()].some((e) => e.options.name === 'dsh-deepseek-monitor' && e.options.id !== 'deepseek-monitor' && !e.disabled)"
