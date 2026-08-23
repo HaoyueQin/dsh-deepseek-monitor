@@ -64,20 +64,30 @@ export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
   // Last known provider/model per session id. `request/context` logs on
   // route changes only; misses seed lazily from sessions' requestContext fold.
   const routes = new Map<string, { provider: string, model: string }>()
+  // The bus delivers the SESSION OBJECT (the cordis session/event contract),
+  // not its id — keying the map by String(session) would collapse every
+  // session into one "[object Object]" slot. Accept a bare string too so a
+  // future contract change cannot silently reintroduce the collapse.
+  const sessionIdOf = (session: unknown): string => {
+    if (typeof session === 'string') return session
+    const id = (session as { id?: unknown } | null | undefined)?.id
+    return typeof id === 'string' && id !== '' ? id : ''
+  }
   ctx.effect(() => {
-    const off = ctx.on('session/event', (sessionId, event) => {
+    const off = ctx.on('session/event', (session, event) => {
       if (event.type !== 'request/context') return
+      const sid = sessionIdOf(session)
+      if (sid === '') return
       const data = event.data as { provider?: unknown, model?: unknown } | undefined
       if (data !== null && typeof data === 'object' && typeof data.provider === 'string' && typeof data.model === 'string') {
-        routes.set(String(sessionId), { provider: data.provider, model: data.model })
+        routes.set(sid, { provider: data.provider, model: data.model })
       }
     })
     return off
   }, 'dsh-deepseek-monitor: session route tracking')
 
-  let tokenConfigured = false
   const tokenFlag = (): Promise<boolean> =>
-    platformToken.describe().then((info) => { tokenConfigured = info.configured; return info.configured })
+    platformToken.describe().then((info) => info.configured)
 
   const refresher = createRefresher({
     store,

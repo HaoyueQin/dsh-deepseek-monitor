@@ -142,16 +142,26 @@ function buildOver(tables: { prefs: () => DsmKv, cache: () => DsmKv, index: () =
   }
 }
 
-function memoryTables(): { prefs: () => DsmKv, cache: () => DsmKv, index: () => DsmKv } {
-  const prefsMap = new Map<string, unknown>()
-  const cacheMap = new Map<string, unknown>()
-  const indexMap = new Map<string, unknown>()
+interface MemoryTables {
+  prefs: () => DsmKv
+  cache: () => DsmKv
+  index: () => DsmKv
+  /** The raw maps, so a late domain swap can MIGRATE boot-window writes. */
+  maps: { prefs: Map<string, unknown>, cache: Map<string, unknown>, index: Map<string, unknown> }
+}
+
+function memoryTables(): MemoryTables {
+  const maps = {
+    prefs: new Map<string, unknown>(),
+    cache: new Map<string, unknown>(),
+    index: new Map<string, unknown>(),
+  }
   const wrap = (map: Map<string, unknown>): DsmKv => ({
     get: key => map.get(key),
     put: async (key, value) => { map.set(key, value) },
     delete: async key => map.delete(key),
   })
-  return { prefs: () => wrap(prefsMap), cache: () => wrap(cacheMap), index: () => wrap(indexMap) }
+  return { prefs: () => wrap(maps.prefs), cache: () => wrap(maps.cache), index: () => wrap(maps.index), maps }
 }
 
 /** The process-level store accessor (singleton; see the file contract). */
@@ -161,7 +171,8 @@ export function sharedStore(storageDomain: Context['storageDomain'] | undefined)
   if (existing !== undefined) return existing
 
   // Start in memory so reads/writes work from tick zero.
-  let active: MonitorStore = buildOver(memoryTables())
+  const mem = memoryTables()
+  let active: MonitorStore = buildOver(mem)
   const store: MonitorStore = {
     getPrefs: () => active.getPrefs(),
     setPrefs: patch => active.setPrefs(patch),
@@ -173,13 +184,24 @@ export function sharedStore(storageDomain: Context['storageDomain'] | undefined)
   }
 
   if (storageDomain !== undefined) {
+    // The swap must CARRY OVER boot-window writes: the first refresh tick
+    // races the async open, and dropping what landed in memory would lose a
+    // balance snapshot or a saved preference until some later cycle rewrote
+    // it. Rows are copied into the real tables BEFORE active flips; a write
+    // landing mid-copy after its key was taken still misses — an accepted
+    // sub-millisecond window, documented rather than pretended away.
     void storageDomain
       .open(monitorDomain as never)
-      .then(domain => buildOver({
-        prefs: () => domain.table('prefs') as DsmKv,
-        cache: () => domain.table('usage') as DsmKv,
-        index: () => domain.table('index') as DsmKv,
-      }))
+      .then(async (domain) => {
+        const prefsTable = domain.table('prefs') as DsmKv
+        const cacheTable = domain.table('usage') as DsmKv
+        const indexTable = domain.table('index') as DsmKv
+        for (const [key, value] of mem.maps.prefs) await prefsTable.put(key, value)
+        for (const [key, value] of mem.maps.cache) await cacheTable.put(key, value)
+        const indexRow = mem.maps.index.get('index')
+        if (indexRow !== undefined) await indexTable.put('index', indexRow)
+        return buildOver({ prefs: () => prefsTable, cache: () => cacheTable, index: () => indexTable })
+      })
       .then((real) => { active = real })
       .catch(() => { /* degraded mode stays in memory */ })
   }

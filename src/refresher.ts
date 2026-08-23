@@ -37,6 +37,11 @@ export function createRefresher(deps: RefresherDeps): {
   const refreshOnce = async (): Promise<void> => {
     if (running) return
     running = true
+    // The error slot reflects THIS tick only: clearing it here lets a
+    // recovered source drop its old failure from /status and keeps
+    // refreshNow() honest (a successful run must not re-throw the previous
+    // tick's message).
+    error = ''
     try {
       const prefs = deps.store.getPrefs()
       const now = Date.now()
@@ -95,6 +100,10 @@ export function createRefresher(deps: RefresherDeps): {
 
   return {
     start(): void {
+      // Revivable: prefs.update() restarts the chain with dispose()+start(),
+      // so start() must clear the retired flag — a one-shot dispose would
+      // otherwise kill auto-refresh for the rest of the fiber's life.
+      disposed = false
       scheduleNext()
     },
     dispose(): void {
