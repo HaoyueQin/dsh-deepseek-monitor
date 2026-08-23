@@ -6,3 +6,6 @@ lib/
 
 # internal design doc — not for distribution
 docs/feasibility-and-plan.md
+
+# packed artifacts (release workflow + local prepublish pack)
+dist/
