@@ -22,7 +22,7 @@ A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring*
 - **"Account details" button**: sits left of the built-in Edit button, cloned from the host button styling for pixel parity
 - **Balance chip**: live balance next to the model name, rendered with the currency's symbol (¥/$/…); turns red below the threshold
 - **Expanded panel**:
-  - **Account balance**: official `GET /user/balance` API reusing the key already configured in dsh; today / month-to-date mini metrics; low-balance warning
+  - **Account balance**: official `GET /user/balance` API reusing the key already configured in dsh; today / month-to-date mini metrics (rendered in the account currency, falling back to ¥ without a balance snapshot); low-balance warning
   - **Per-model usage rows**: fixed order Flash → Vision → Pro, full platform ids, lucide SVG icons (bolt / image / brain), per-model soft accents (sky / lavender / brand blue), progress bar + cache-hit rate + cost, constant row height
   - **Daily stacked chart**: DSM's own palette (hit green / miss orange / response purple), month navigation, sparse date labels that never collide, custom styled hover cards
   - **Platform token setup**: two acquisition channels — ① one-click console capture script (paste on the signed-in platform page, token pops up); ② manual paste via DevTools. Verified against the platform API before being stored write-only
@@ -32,7 +32,7 @@ A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring*
 
 - Mounted on the official `conversation.composer.dock` slot — same line, same typography as turns/steps, latency and cache-hit stats
 - Shown only in sessions whose latest route is an official DeepSeek model; appears and disappears with the stats band
-- Refresh cadence is driven by the auto-refresh interval configured above
+- The chip and the stats band poll the host cache every 60s and the expanded panel follows the configured interval; actual upstream refreshes are driven by the auto-refresh interval above (≥60s — only the host-side timer ever calls upstream)
 
 ## Data & security
 
