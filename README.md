@@ -20,7 +20,7 @@ DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://githu
 ### 设置 · 模型 · DeepSeek 行内增强
 
 - **「账户明细」按钮**：位于「编辑」左侧，克隆宿主按钮样式，视觉完全一致
-- **余额 chip**：模型名称旁实时显示「余额 ¥x.xx」，低于阈值变红
+- **余额 chip**：模型名称旁实时显示余额（按币种渲染符号，如 ¥/$），低于阈值变红
 - **展开面板**（点击按钮在卡片容器内展开）：
   - **账户余额**：官方 `GET /user/balance` API，复用 dsh 已配置的密钥；今日消耗 / 本月费用 mini 格；低余额警示
   - **模型用量行**：固定顺序 Flash → Vision → Pro，平台全称显示、lucide SVG 图标（闪电 / 照片 / 大脑）、独立柔和配色（天蓝 / 雾紫 / 品牌蓝）、进度条 + 缓存命中率 + 费用，行高恒定
@@ -64,14 +64,16 @@ GUI 取证脚本（无头浏览器验证面板挂载与样式）：`node scripts
 
 ## 致谢
 
-沿参考链向上追溯，本项目站在以下项目的肩膀上：
+本插件的余额 / 平台用量后端与面板结构，移植自作者自己的 [HaoyueQin/DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows)（Windows 桌面版）；移植所依据的实现沿其自述谱系继续向上追溯：
 
 | 项目 | 关系 | 许可证 |
 | --- | --- | --- |
-| [Joyi-code/DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) | 余额 / 用量后端逻辑与仪表盘结构的移植来源 | MIT |
-| [JayHome137/DeepSeekMonitor](https://github.com/JayHome137/DeepSeekMonitor) | 上游思路来源（macOS 菜单栏版监控），功能设计沿袭自此 | MIT |
-| [felikschu/deepseek-monitor](https://github.com/felikschu/deepseek-monitor) | DeepSeekMonitorWindows 自述中对标的早期项目：DeepSeek 平台动态追踪网页仪表盘（Python）；本项目与其无代码复用 | README 声明 MIT（仓库未附许可证文本） |
+| [HaoyueQin/DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) | **直接移植来源**：`do_fetch_balance` / `do_fetch_usage` / token 口径与仪表盘结构的 TypeScript 移植底本 | MIT |
+| [Joyi-code/DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) | 上述桌面版的**直接上游**（Windows Tauri 2 重构），移植逻辑的最终出处 | MIT |
+| [JayHome137/DeepSeekMonitor](https://github.com/JayHome137/DeepSeekMonitor) | 谱系起点（macOS 菜单栏 + WidgetKit 版），开创了「DeepSeek 余额与用量监控」这一形态 | MIT |
 | [lucide](https://lucide.dev/) | SVG 图标库 | ISC |
+
+> 注：上游 HaoyueQin/DeepSeekMonitorWindows 的 README 曾一度将 Joyi-code 上游误标为 felikschu/deepseek-monitor（一个 Python 编写的 DeepSeek **平台变化追踪**系统，与余额/用量监控无关），并已在更正说明中澄清。该仓库与本插件无任何代码复用关系。
 
 本项目基于 [MIT](./LICENSE) 发布，上述 MIT 项目许可声明随分发一并保留。
 

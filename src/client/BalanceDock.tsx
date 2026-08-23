@@ -82,8 +82,13 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
     const t0 = props.t as ((key: keyof typeof en) => string) | undefined
     if (t0 === undefined) return
     let raf = 0
-    /** Release the reserved padding / positioning we put on the host row. */
-    const releaseRow = (row: HTMLElement): void => {
+    /** Release the reserved padding / positioning we put on the host row.
+     *  Accepts null/undefined BY DESIGN: at cleanup time React may already
+     *  have detached/null the anchor, and a throw here escapes the effect
+     *  boundary — which retires the WHOLE conversation slot entry (observed:
+     *  blank center pane until reload). */
+    const releaseRow = (row: HTMLElement | null | undefined): void => {
+      if (row === null || row === undefined) return
       if (row.dataset.dsmBandPad !== undefined) {
         delete row.dataset.dsmBandPad
         row.style.paddingRight = ''
@@ -93,10 +98,13 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
         row.style.position = ''
       }
     }
-    const ensure = (): void => {
+    const applyBand = (): void => {
       const anchor = anchorRef.current
       if (anchor === null) return
-      const row = anchor.previousElementSibling as HTMLElement | null
+      // ?? null: previousElementSibling is Element | null per the DOM types,
+      // but a detached anchor can yield undefined through optional chaining —
+      // normalize so every guard below only ever sees null.
+      const row = (anchor.previousElementSibling ?? null) as HTMLElement | null
       const hasStats = row !== null && statsTextLength(row) > 0
       const existing = row?.querySelector<HTMLElement>('[data-dsm-band]') ?? null
       const visible = hasStats && row !== null && alive === true && isOfficialDeepSeek(route)
@@ -139,15 +147,19 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
       // Sibling order — whatever React does to its own children — cannot move it.
       const padR = Number.parseFloat(getComputedStyle(row).paddingRight) || 0
       band.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);right:${padR}px;z-index:1;white-space:nowrap;line-height:inherit;`
-      // Reserve the band's measured width in the row's right padding so the
-      // centered stats text ellipsises BEFORE reaching the overlay instead of
-      // sliding under it.
       // Reserve the band's FULL measured width beyond the original padding:
       // the overlay's right edge sits at the original content edge and grows
       // leftward, so the centered text must ellipsize bandWidth earlier.
       const base = Number.parseFloat(row.dataset.dsmBandPad ?? String(padR))
       row.dataset.dsmBandPad = String(base)
       row.style.paddingRight = `${base + Math.max(band.offsetWidth, 0)}px`
+    }
+    // Our integration must NEVER throw into the host slot: an escaping error
+    // from an effect or its cleanup retires the conversation entry (the blank
+    // center-pane incident). Contain everything here; the next scheduled pass
+    // retries against whatever DOM state triggered the failure.
+    const ensure = (): void => {
+      try { applyBand() } catch { /* transient host DOM state */ }
     }
     const schedule = (): void => {
       cancelAnimationFrame(raf)
@@ -167,10 +179,15 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
     return () => {
       cancelAnimationFrame(raf)
       observer.disconnect()
-      // Fiber disposal: drop our overlay and undo the row additions.
-      const row = anchorRef.current?.previousElementSibling as HTMLElement | null
-      row?.querySelector('[data-dsm-band]')?.remove()
-      if (row !== null) releaseRow(row)
+      // Fiber disposal: drop our overlay and undo the row additions. The
+      // anchor may already be detached (React nulls refs during unmount), so
+      // normalize undefined AND contain any residual failure — a throw here
+      // is what retired the conversation entry on session switches.
+      try {
+        const row = (anchorRef.current?.previousElementSibling ?? null) as HTMLElement | null
+        row?.querySelector('[data-dsm-band]')?.remove()
+        releaseRow(row)
+      } catch { /* never let disposal break the host slot */ }
     }
   }, [alive, status, route, props.sessionId, props.t])
 
