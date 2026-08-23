@@ -14,11 +14,14 @@ import { DsmError } from './wire.ts'
 /** The credential reference this plugin owns for the platform token. */
 export const PLATFORM_TOKEN_REF = 'DEEPSEEK_PLATFORM_TOKEN'
 
-const USAGE_AMOUNT_URL = 'https://platform.deepseek.com/api/v0/usage/amount'
-const TIMEOUT_MS = 15_000
+/** The platform usage endpoint + shared request chrome, exported so the usage
+ *  service and the token verification reuse ONE copy (header drift between the
+ *  two was the historical failure mode). */
+export const USAGE_AMOUNT_URL = 'https://platform.deepseek.com/api/v0/usage/amount'
+export const TIMEOUT_MS = 15_000
 
 /** Browser-grade UA + app-version headers, as the platform endpoint expects. */
-const REQUEST_HEADERS: Record<string, string> = {
+export const PLATFORM_REQUEST_HEADERS: Record<string, string> = {
   'x-app-version': '1.0.0',
   accept: '*/*',
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
@@ -39,7 +42,7 @@ export async function verifyUsageToken(token: string): Promise<void> {
   let response: Response
   try {
     response = await fetch(url, {
-      headers: { ...REQUEST_HEADERS, authorization: `Bearer ${token}` },
+      headers: { ...PLATFORM_REQUEST_HEADERS, authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
   } catch (cause) {

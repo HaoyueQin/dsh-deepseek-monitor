@@ -27,6 +27,12 @@ export interface BalanceDeps {
   keyRef?: string
 }
 
+/** Pick the CNY entry case-insensitively; fall back to the first entry when
+ *  the account has no CNY row (mirrors upstream's eq_ignore_ascii_case). */
+export function pickCnyBalanceInfo<T extends { currency?: string }>(infos: readonly T[]): T | undefined {
+  return infos.find(entry => (entry.currency ?? '').toUpperCase() === 'CNY') ?? infos[0]
+}
+
 export function createBalanceService(deps: BalanceDeps): {
   /** Cached-or-fetch read; throws the refresh error when no fresh cache serves. */
   get(force: boolean): Promise<BalanceSnapshot>
@@ -74,7 +80,7 @@ export function createBalanceService(deps: BalanceDeps): {
       console.info('[dsm-balance] raw payload:', JSON.stringify(body))
     }
     const infos = parsed.balance_infos ?? []
-    const info = infos.find(entry => entry.currency === 'CNY') ?? infos[0]
+    const info = pickCnyBalanceInfo(infos)
     if (info === undefined || typeof info.total_balance !== 'string') {
       throw new DsmError(502, '余额信息为空或接口形状已变更')
     }

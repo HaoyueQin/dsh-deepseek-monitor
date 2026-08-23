@@ -10,17 +10,9 @@
 import type { DsmCredentials } from './context-types.ts'
 import type { UsageDaySummary, UsageModelSummary, UsageResult } from './wire.ts'
 import { DsmError } from './wire.ts'
-import { PLATFORM_TOKEN_REF } from './platform-token.ts'
+import { PLATFORM_REQUEST_HEADERS, PLATFORM_TOKEN_REF, TIMEOUT_MS, USAGE_AMOUNT_URL } from './platform-token.ts'
 
-const AMOUNT_URL = 'https://platform.deepseek.com/api/v0/usage/amount'
 const COST_URL = 'https://platform.deepseek.com/api/v0/usage/cost'
-const TIMEOUT_MS = 15_000
-
-const REQUEST_HEADERS: Record<string, string> = {
-  'x-app-version': '1.0.0',
-  accept: '*/*',
-  'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
-}
 
 /** Model display labels: full platform ids as names (per product decision);
  *  unknown ids keep their raw id. */
@@ -95,7 +87,7 @@ async function getJson<T>(url: string, token: string): Promise<T> {
   let response: Response
   try {
     response = await fetch(url, {
-      headers: { ...REQUEST_HEADERS, authorization: `Bearer ${token}` },
+      headers: { ...PLATFORM_REQUEST_HEADERS, authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
   } catch (cause) {
@@ -118,16 +110,16 @@ export function createUsageService(deps: UsageDeps): {
     async fetch(year: number, month: number): Promise<UsageResult> {
       const resolved = await deps.credentials.resolve(PLATFORM_TOKEN_REF)
       if (resolved === undefined) throw new DsmError(409, '尚未配置平台用量 Token')
-      const amount = await getJson<AmountResponse>(`${AMOUNT_URL}?month=${month}&year=${year}`, resolved.value)
+      const amount = await getJson<AmountResponse>(`${USAGE_AMOUNT_URL}?month=${month}&year=${year}`, resolved.value)
       const cost = await getJson<CostResponse>(`${COST_URL}?month=${month}&year=${year}`, resolved.value)
 
       const amountBiz = amount.data?.biz_data
       const costTotal = cost.data?.biz_data?.[0]
 
-      const costForModel = (model: string): number =>
-        costTotal?.total?.find(block => block.model === model)?.usage !== undefined
-          ? costSum(costTotal.total.find(block => block.model === model)?.usage ?? [])
-          : 0
+      const costForModel = (model: string): number => {
+        const block = costTotal?.total?.find(item => item.model === model)
+        return block?.usage !== undefined ? costSum(block.usage) : 0
+      }
 
       const models: UsageModelSummary[] = []
       for (const block of amountBiz?.total ?? []) {
