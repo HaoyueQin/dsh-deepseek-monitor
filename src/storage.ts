@@ -61,6 +61,11 @@ const usageDaySchema = z.object({
   proCacheHit: z.number(),
   proCacheMiss: z.number(),
   proResponse: z.number(),
+  // Optional both directions: rows persisted before these fields existed
+  // parse unchanged, and the chart treats absent as zero.
+  otherCacheHit: z.number().optional(),
+  otherCacheMiss: z.number().optional(),
+  otherResponse: z.number().optional(),
   totalTokens: z.number(),
   totalCost: z.number(),
 })

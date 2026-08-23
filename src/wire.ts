@@ -86,6 +86,13 @@ export interface UsageDaySummary {
   proCacheHit: number
   proCacheMiss: number
   proResponse: number
+  /** Every OTHER model the platform reports (e.g. the vision exp): tokens
+   *  land in totalTokens but no dedicated row, so the daily chart folds them
+   *  here to keep its stacked segments equal to the bar height. Absent on
+   *  rows persisted before this field existed. */
+  otherCacheHit?: number
+  otherCacheMiss?: number
+  otherResponse?: number
   totalTokens: number
   totalCost: number
 }

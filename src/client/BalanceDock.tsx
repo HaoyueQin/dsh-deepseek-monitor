@@ -22,6 +22,7 @@ import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots
 import type { en } from './locales.ts'
 import { LOCALE_NS } from './locales.ts'
 import { fetchSessionRoute, fetchStatus } from './api.ts'
+import { formatBalance } from './balance-format.ts'
 import type { MonitorStatus } from '../wire.ts'
 
 export type BalanceDockProps = PropsRuntime<'conversation.composer.dock'> & PropsLocale<typeof LOCALE_NS>
@@ -130,7 +131,7 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
       const valueEl = band.lastElementChild as HTMLElement
       const b = status?.balance ?? null
       const low = status?.lowBalance === true
-      valueEl.textContent = b !== null ? `${b.totalBalance} ${b.currency}` : '--'
+      valueEl.textContent = b !== null ? formatBalance(b) : '--'
       valueEl.style.color = low ? 'var(--dsw-alias-danger-fg, #c0392b)' : ''
       band.title = `${t0('balanceLabel')}: ${valueEl.textContent}`
       // Pin RIGHT, deterministically: absolute overlay at the content-box

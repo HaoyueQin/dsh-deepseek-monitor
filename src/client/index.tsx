@@ -11,7 +11,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import { BalanceDock } from './BalanceDock.tsx'
 import { setupAugment } from './augment.tsx'
-import { LOCALE_NS, en, zh, type DeepSeekMonitorKey } from './locales.ts'
+import { LOCALE_NS, en, zh, zhTW, type DeepSeekMonitorKey } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -27,7 +27,8 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => {
     const offZh = ctx.locale.register(LOCALE_NS, 'zh', zh)
     const offEn = ctx.locale.register(LOCALE_NS, 'en', en)
-    return () => { offZh(); offEn() }
+    const offZhTw = ctx.locale.register(LOCALE_NS, 'zh-TW', zhTW)
+    return () => { offZh(); offEn(); offZhTw() }
   }, 'dsh-deepseek-monitor: dictionaries')
 
   // The conversation stats-band balance item (official composer.dock seat).
@@ -46,8 +47,10 @@ export function apply(ctx: ClientContext): void {
       getLocale?: () => { active?: string }
       subscribe?: (listener: () => void) => () => void
     }
-    const dict = (): Record<string, string> =>
-      locale.getLocale?.().active === 'en' ? en : zh
+    const dict = (): Record<string, string> => {
+      const active = locale.getLocale?.().active
+      return active === 'en' ? en : active === 'zh-TW' ? zhTW : zh
+    }
     return setupAugment({
       dict,
       onLocaleChange: listener => locale.subscribe?.(listener) ?? (() => {}),

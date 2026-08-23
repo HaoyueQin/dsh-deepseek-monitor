@@ -175,6 +175,13 @@ export function createUsageService(deps: UsageDeps): {
             summary.proCacheHit += b.hit
             summary.proCacheMiss += b.miss
             summary.proResponse += b.response
+          } else {
+            // Any other model (vision exp, future ids): no dedicated row, but
+            // its buckets must reach the daily chart or the stacked segments
+            // fall short of the bar height the total implies.
+            summary.otherCacheHit = (summary.otherCacheHit ?? 0) + b.hit
+            summary.otherCacheMiss = (summary.otherCacheMiss ?? 0) + b.miss
+            summary.otherResponse = (summary.otherResponse ?? 0) + b.response
           }
         }
         days.push(summary)

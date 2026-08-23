@@ -14,6 +14,7 @@
 import { createRoot, type Root } from 'react-dom/client'
 import { createElement } from 'react'
 import { ProviderPanel } from './ProviderPanel.tsx'
+import { formatBalance } from './balance-format.ts'
 import { fetchStatus } from './api.ts'
 import type { MonitorStatus } from '../wire.ts'
 import type { DeepSeekMonitorKey } from './locales.ts'
@@ -65,7 +66,7 @@ export function setupAugment(deps: AugmentDeps): () => void {
   const chipText = (): string => {
     const d = deps.dict()
     const b = lastStatus?.balance
-    return b === null || b === undefined ? `${d.balanceLabel ?? '余额'} --` : `${d.balanceLabel ?? '余额'} ${b.totalBalance} ${b.currency}`
+    return b === null || b === undefined ? `${d.balanceLabel ?? '余额'} --` : `${d.balanceLabel ?? '余额'} ${formatBalance(b)}`
   }
 
   const renderPanelInto = (managedEntry: Managed): void => {

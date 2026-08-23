@@ -17,6 +17,7 @@ import Brain from 'lucide-react/dist/esm/icons/brain'
 import ImageIcon from 'lucide-react/dist/esm/icons/image'
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles'
 import type { DeepSeekMonitorKey } from './locales.ts'
+import { currencySymbol } from './balance-format.ts'
 import { fetchBalance, fetchPrefs, fetchStatus, fetchUsage, postCache, postPrefs, postToken } from './api.ts'
 import { CAPTURE_SCRIPT } from './capture-script.ts'
 import type { MonitorPrefs, MonitorStatus, UsageModelSummary, UsageResult } from '../wire.ts'
@@ -294,12 +295,14 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const today = usage?.days.find(day => day.date === todayStr()) ?? null
   const monthTotal = usage?.days.reduce((sum, day) => sum + day.totalTokens, 0) ?? 0
 
-  // Chart points (DSM UsageChart fold): hit/miss/response summed across models.
+  // Chart points (DSM UsageChart fold): hit/miss/response summed across ALL
+  // models — flash/pro rows plus the other-model buckets, so a segment stack
+  // always fills the bar height its total implies.
   const points = (usage?.days ?? []).map((day) => ({
     date: day.date,
-    hit: day.flashCacheHit + day.proCacheHit,
-    miss: day.flashCacheMiss + day.proCacheMiss,
-    response: day.flashResponse + day.proResponse,
+    hit: day.flashCacheHit + day.proCacheHit + (day.otherCacheHit ?? 0),
+    miss: day.flashCacheMiss + day.proCacheMiss + (day.otherCacheMiss ?? 0),
+    response: day.flashResponse + day.proResponse + (day.otherResponse ?? 0),
     total: day.totalTokens,
     cost: day.totalCost,
   }))
@@ -389,7 +392,9 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
           ? (
               <>
                 <div style={{ fontSize: 26, fontWeight: 700, ...(status?.lowBalance === true ? errorText : {}) }}>
-                  {balance !== null ? `¥${balance.totalBalance}` : '—'}
+                  {/* Currency-aware: the API may serve USD-first accounts, and a
+                      hardcoded ¥ mislabeled them (chip/band were already correct). */}
+                  {balance !== null ? `${currencySymbol(balance.currency)}${balance.totalBalance}` : '—'}
                 </div>
                 {balance !== null
                   ? (
@@ -408,7 +413,7 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
                 {balance !== null
                   ? (
                       <div style={{ ...mutedText, marginTop: 6 }}>
-                        {`${d.grantedBalance} ¥${balance.grantedBalance} · ${d.toppedUpBalance} ¥${balance.toppedUpBalance} · ${d.refreshedAt} ${new Date(balance.fetchedAt).toLocaleTimeString()}`}
+                        {`${d.grantedBalance} ${currencySymbol(balance.currency)}${balance.grantedBalance} · ${d.toppedUpBalance} ${currencySymbol(balance.currency)}${balance.toppedUpBalance} · ${d.refreshedAt} ${new Date(balance.fetchedAt).toLocaleTimeString()}`}
                       </div>
                     )
                   : null}
