@@ -178,14 +178,30 @@ export function sharedStore(storageDomain: Context['storageDomain'] | undefined)
   // Start in memory so reads/writes work from tick zero.
   const mem = memoryTables()
   let active: MonitorStore = buildOver(mem)
+  // Serializes the usage-month INDEX read-modify-write across the memory →
+  // domain swap: two concurrent setUsage calls (refresher + a forced panel
+  // fetch) each read-modify-write the index row, and an interleaved pair
+  // loses one caller's month key — clearCache would then never delete that
+  // row and the "cleared" cache keeps serving it. Chaining here (instead of
+  // inside buildOver) keeps one queue alive across the swap, which rebuilds
+  // its tables. Same shape as dsh-usage-statistics-panel's markChain.
+  let indexChain: Promise<void> = Promise.resolve()
+  const serialized = (task: () => Promise<void>): Promise<void> => {
+    const write = indexChain.then(task)
+    indexChain = write.then(
+      () => undefined,
+      () => undefined,
+    )
+    return write
+  }
   const store: MonitorStore = {
     getPrefs: () => active.getPrefs(),
     setPrefs: patch => active.setPrefs(patch),
     getBalance: () => active.getBalance(),
     setBalance: snapshot => active.setBalance(snapshot),
     getUsage: (year, month) => active.getUsage(year, month),
-    setUsage: result => active.setUsage(result),
-    clearCache: () => active.clearCache(),
+    setUsage: result => serialized(() => active.setUsage(result)),
+    clearCache: () => serialized(() => active.clearCache()),
   }
 
   if (storageDomain !== undefined) {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { _resetSharedStoreForTests, sharedStore } from '../src/storage.ts'
-import type { BalanceSnapshot } from '../src/wire.ts'
+import type { BalanceSnapshot, UsageResult } from '../src/wire.ts'
 
 const snap = (): BalanceSnapshot => ({
   isAvailable: true,
@@ -69,5 +69,46 @@ describe('domain swap migration', () => {
     expect(backing.usage.get('balance')).toMatchObject({ totalBalance: '5.00' })
     expect(store.getPrefs().refreshIntervalSeconds).toBe(120)
     expect(store.getBalance()?.currency).toBe('USD')
+  })
+})
+
+describe('cache-index write serialization', () => {
+  it('never loses a month key when concurrent writes and clearCache interleave', async () => {
+    _resetSharedStoreForTests()
+    const backing = {
+      prefs: new Map<string, unknown>(),
+      usage: new Map<string, unknown>(),
+      index: new Map<string, unknown>(),
+    }
+    // Async kv with a delayed write: without index serialization two
+    // concurrent setUsage calls both read the index row before either put
+    // lands, and the later put drops the earlier call's key.
+    const kv = (m: Map<string, unknown>) => ({
+      get: (k: string) => m.get(k),
+      put: async (k: string, v: unknown) => { await new Promise(resolve => setTimeout(resolve, 0)); m.set(k, v) },
+      delete: async (k: string) => { await new Promise(resolve => setTimeout(resolve, 0)); m.delete(k) },
+    })
+    let resolveOpen!: () => void
+    const opened = new Promise<void>(resolve => { resolveOpen = resolve })
+    const domainStub = {
+      open: () => opened.then(() => ({
+        table: (name: string) => kv(name === 'prefs' ? backing.prefs : name === 'index' ? backing.index : backing.usage),
+      })),
+    }
+    const store = sharedStore(domainStub as never)
+    // Swap to the real tables BEFORE the concurrent writes so the race runs
+    // on the async kv above.
+    resolveOpen()
+    await store.setPrefs({ refreshIntervalSeconds: 120 })
+    await vi.waitFor(() => { expect(backing.prefs.get('prefs')).toBeTruthy() })
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const month = (y: number, m: number): UsageResult => ({ year: y, month: m, models: [], days: [], monthCost: 0, fetchedAt: 1 })
+    await Promise.all([store.setUsage(month(2026, 1)), store.setUsage(month(2026, 2))])
+    await store.clearCache()
+    // clearCache deletes every row named in the index; a lost key would
+    // leave its row behind and keep serving stale data.
+    expect(store.getUsage(2026, 1)).toBeNull()
+    expect(store.getUsage(2026, 2)).toBeNull()
   })
 })

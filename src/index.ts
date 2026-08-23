@@ -48,12 +48,19 @@ export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
     lastError: balance.lastError,
   }
 
-  // Cache-first usage read; `force` bypasses the cache.
+  /** A cached month ages out after this long: historical months are
+   *  cache-first (the refresher only re-fetches the current month), but a
+   *  correction upstream (refund, re-billing) must reach the panel without a
+   *  manual cache clear. */
+  const USAGE_CACHE_TTL_MS = 10 * 60_000
+
+  // Cache-first usage read; force bypasses the cache. A cached row older
+  // than the TTL counts as a miss and is re-fetched.
   const usageCached = {
     get: async (year: number, month: number, force: boolean) => {
       if (!force) {
         const cached = store.getUsage(year, month)
-        if (cached !== null) return cached
+        if (cached !== null && Date.now() - cached.fetchedAt < USAGE_CACHE_TTL_MS) return cached
       }
       const result = await usage.fetch(year, month)
       await store.setUsage(result)
