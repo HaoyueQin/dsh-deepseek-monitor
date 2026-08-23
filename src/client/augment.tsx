@@ -25,8 +25,13 @@ const PANEL = 'data-dsm-panel-root'
 
 /** Row-name texts that identify the official DeepSeek provider row. */
 const ROW_NAMES = new Set(['DeepSeek'])
-/** The edit-button labels the Models page uses per locale. */
-const EDIT_LABELS = new Set(['编辑', 'Edit'])
+/** The edit-button labels the Models page uses per locale ('編輯' guards a
+ *  future zh-TW dictionary on the host Models page). */
+const EDIT_LABELS = new Set(['编辑', '編輯', 'Edit'])
+
+/** Whether an aria-label names the row's edit action in any shipped locale. */
+const isEditAriaLabel = (label: string): boolean =>
+  ['编辑', '編輯', 'Edit'].some(prefix => label.startsWith(prefix))
 
 /**
  * Marks the host's inline provider editor INSIDE a row li. The editor root's
@@ -40,8 +45,7 @@ const EDITOR_IN_ROW_SELECTOR = '[class*="editor"]'
 function findEditButton(actions: Element): HTMLButtonElement | undefined {
   return [...actions.querySelectorAll('button')].find(b =>
     EDIT_LABELS.has(b.textContent?.trim() ?? '')
-    || (b.getAttribute('aria-label') ?? '').startsWith('编辑')
-    || (b.getAttribute('aria-label') ?? '').startsWith('Edit'))
+    || isEditAriaLabel(b.getAttribute('aria-label') ?? ''))
 }
 
 export interface AugmentDeps {
