@@ -52,6 +52,8 @@
     "cordis.patch.yml",
     "dsh.plugin.json",
     "README.md",
+    "README_EN.md",
+    "docs/images/account-details-panel.png",
     "LICENSE"
   ],
   "scripts": {
