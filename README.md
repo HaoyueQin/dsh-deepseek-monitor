@@ -6,7 +6,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/dsh-deepseek-monitor)](https://www.npmjs.com/package/dsh-deepseek-monitor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![TypeScript 5.6](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![dsh plugin · web](https://img.shields.io/badge/dsh-plugin-web-4D6BFE)](https://github.com/DeepSeek-ai/DeepSeek-Harness)
+[![dsh plugin · web](https://img.shields.io/badge/dsh--plugin-web-4D6BFE)](https://github.com/DeepSeek-ai/DeepSeek-Harness)
 [![node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
 DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) 的**余额与用量监控**能力移植进 dsh —— 集成到「设置 → 模型 → DeepSeek」供应商卡片内，并在对话统计带显示实时余额。
