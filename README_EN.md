@@ -1,4 +1,4 @@
-# DSH Deepseek Monitor
+# DSH DeepSeek Monitor
 
 English | [简体中文](./README.md)
 
@@ -73,8 +73,6 @@ The balance / platform-usage backend and the dashboard structure were ported fro
 | [Joyi-code/DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) | **Direct upstream** of that desktop app (the Windows Tauri 2 rebuild) — where the ported logic ultimately comes from | MIT |
 | [JayHome137/DeepSeekMonitor](https://github.com/JayHome137/DeepSeekMonitor) | Origin of the lineage (macOS menu-bar + WidgetKit), which pioneered DeepSeek balance & usage monitoring | MIT |
 | [lucide](https://lucide.dev/) | SVG icon library | ISC |
-
-> Note: the desktop README once misattributed its Joyi-code upstream to felikschu/deepseek-monitor (a Python tracker for DeepSeek PLATFORM changes, unrelated to balance/usage monitoring) and has since published a correction. That repository shares no code with this plugin.
 
 Released under [MIT](./LICENSE); the MIT notices of the projects above are preserved with any distribution.
 

@@ -1,4 +1,4 @@
-# DSH Deepseek Monitor
+# DSH DeepSeek Monitor
 
 [English](./README_EN.md) | 简体中文
 
@@ -73,8 +73,6 @@ GUI 取证脚本（无头浏览器验证面板挂载与样式）：`node scripts
 | [Joyi-code/DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) | 上述桌面版的**直接上游**（Windows Tauri 2 重构），移植逻辑的最终出处 | MIT |
 | [JayHome137/DeepSeekMonitor](https://github.com/JayHome137/DeepSeekMonitor) | 谱系起点（macOS 菜单栏 + WidgetKit 版），开创了「DeepSeek 余额与用量监控」这一形态 | MIT |
 | [lucide](https://lucide.dev/) | SVG 图标库 | ISC |
-
-> 注：上游 HaoyueQin/DeepSeekMonitorWindows 的 README 曾一度将 Joyi-code 上游误标为 felikschu/deepseek-monitor（一个 Python 编写的 DeepSeek **平台变化追踪**系统，与余额/用量监控无关），并已在更正说明中澄清。该仓库与本插件无任何代码复用关系。
 
 本项目基于 [MIT](./LICENSE) 发布，上述 MIT 项目许可声明随分发一并保留。
 
