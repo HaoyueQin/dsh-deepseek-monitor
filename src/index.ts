@@ -83,7 +83,17 @@ export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
         routes.set(sid, { provider: data.provider, model: data.model })
       }
     })
-    return off
+    // Drop a disposed session's route entry: without this a long-running host
+    // accumulates one small map entry per session forever (the same leak
+    // dsh-usage-statistics-panel fixes for its folds).
+    const offDisposed = ctx.on('session/disposed', (session) => {
+      const sid = sessionIdOf(session)
+      if (sid !== '') routes.delete(sid)
+    })
+    return () => {
+      off()
+      offDisposed()
+    }
   }, 'dsh-deepseek-monitor: session route tracking')
 
   const tokenFlag = (): Promise<boolean> =>
