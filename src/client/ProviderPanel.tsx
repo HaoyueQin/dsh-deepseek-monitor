@@ -212,6 +212,17 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
     }).catch(() => { /* settings card shows defaults */ })
   }, [loadStatus])
 
+  // Keep the open panel fresh: poll the HOST CACHE at the configured refresh
+  // interval (status reads never touch the upstream API — the refresher owns
+  // that cadence). Without this the expanded card froze at its mount-time
+  // snapshot while the chip and the stats band kept updating.
+  useEffect(() => {
+    const seconds = prefs?.refreshIntervalSeconds
+    if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return
+    const id = window.setInterval(() => { loadStatus() }, Math.max(60, seconds) * 1000)
+    return () => { window.clearInterval(id) }
+  }, [prefs?.refreshIntervalSeconds, loadStatus])
+
   // Month target for the usage card (0 = current month).
   const target = new Date()
   target.setDate(1)
@@ -259,7 +270,15 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const updatePref = (patch: Partial<MonitorPrefs>): void => {
     setBusy(true)
     void postPrefs(patch)
-      .then((next) => { setPrefs(next); flashNotice(d.saved) })
+      .then((next) => {
+        setPrefs(next)
+        // Resync the drafts to the VALIDATED values (the host clamps the
+        // interval to ≥60s); keeping the raw text would show "30" while 60
+        // was saved.
+        setIntervalDraft(String(next.refreshIntervalSeconds))
+        setThresholdDraft(String(next.lowBalanceThreshold))
+        flashNotice(d.saved)
+      })
       .catch((error: unknown) => { setNotice({ kind: 'error', text: error instanceof Error ? error.message : String(error) }) })
       .finally(() => { setBusy(false) })
   }
