@@ -27,6 +27,22 @@ const ROW_NAMES = new Set(['DeepSeek'])
 /** The edit-button labels the Models page uses per locale. */
 const EDIT_LABELS = new Set(['编辑', 'Edit'])
 
+/**
+ * Marks the host's inline provider editor INSIDE a row li. The editor root's
+ * CSS-module local name is `editor` (hashed `hash_editor`), so the substring
+ * selector matches it in any locale and build. Scoped to the row li, no other
+ * host class in a row contains the substring.
+ */
+const EDITOR_IN_ROW_SELECTOR = '[class*="editor"]'
+
+/** The row's 编辑 button (by label or aria-label, both locales). */
+function findEditButton(actions: Element): HTMLButtonElement | undefined {
+  return [...actions.querySelectorAll('button')].find(b =>
+    EDIT_LABELS.has(b.textContent?.trim() ?? '')
+    || (b.getAttribute('aria-label') ?? '').startsWith('编辑')
+    || (b.getAttribute('aria-label') ?? '').startsWith('Edit'))
+}
+
 export interface AugmentDeps {
   /** Active dictionary, re-resolved on every sync so language flips apply. */
   dict: () => Record<string, string>
@@ -94,11 +110,7 @@ export function setupAugment(deps: AugmentDeps): () => void {
     chip.textContent = chipText()
 
     // ② 「用量」 button LEFT of the row's edit button.
-    const buttons = [...actions.querySelectorAll('button')]
-    const editButton = buttons.find(b =>
-      EDIT_LABELS.has(b.textContent?.trim() ?? '')
-      || (b.getAttribute('aria-label') ?? '').startsWith('编辑')
-      || (b.getAttribute('aria-label') ?? '').startsWith('Edit'))
+    const editButton = findEditButton(actions)
     let btn = actions.querySelector<HTMLButtonElement>(`[${BTN}]`)
     if (btn === null) {
       btn = document.createElement('button')
@@ -130,6 +142,13 @@ export function setupAugment(deps: AugmentDeps): () => void {
       btn.addEventListener('click', () => {
         const container = li.querySelector<HTMLElement>(`[${PANEL}]`)
         if (container === null) return
+        // Mutual exclusion with the host editor: while the editor is open,
+        // close IT first (the row's own edit button toggles) — the editor gate
+        // below then restores our panel the moment the editor unmounts.
+        if (li.querySelector(EDITOR_IN_ROW_SELECTOR) !== null) {
+          findEditButton(actions)?.click()
+          return
+        }
         const open = container.style.display !== 'none'
         container.style.display = open ? 'none' : ''
         if (!open) {
@@ -150,6 +169,33 @@ export function setupAugment(deps: AugmentDeps): () => void {
     }
   }
 
+  /**
+   * The panel ↔ editor mutual exclusion. The two surfaces share one row and
+   * stacking them reads as broken (the expanded panel pushes the editor out
+   * of view, and an editor click then looks dead). Policy:
+   * - editor opens → collapse our panel, remembering it was visible;
+   * - editor closes → restore our panel exactly when we collapsed it.
+   * A manual close by the user stays respected: only gate-driven collapses
+   * are auto-restored.
+   */
+  const syncEditorGate = (li: Element): void => {
+    const container = li.querySelector<HTMLElement>(`[${PANEL}]`)
+    if (container === null) return
+    if (li.querySelector(EDITOR_IN_ROW_SELECTOR) !== null) {
+      if (container.style.display !== 'none') {
+        container.dataset.dsmAutoHidden = '1'
+        container.style.display = 'none'
+      }
+      return
+    }
+    if (container.dataset.dsmAutoHidden === '1') {
+      delete container.dataset.dsmAutoHidden
+      container.style.display = ''
+      const entry = [...managed].find(m => m.el === container)
+      if (entry !== undefined && entry.root === null) renderPanelInto(entry)
+    }
+  }
+
   const resync = (): void => {
     if (disposed) return
     try {
@@ -165,6 +211,7 @@ export function setupAugment(deps: AugmentDeps): () => void {
         const name = li.querySelector('[class*="rowName"]')?.textContent?.trim()
         if (name === undefined || name === '' || !ROW_NAMES.has(name)) continue
         ensureRowPieces(li)
+        syncEditorGate(li)
       }
     } catch {
       // A transient host DOM state must never break the observer loop.
