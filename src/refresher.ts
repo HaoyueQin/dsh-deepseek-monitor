@@ -29,14 +29,16 @@ export function createRefresher(deps: RefresherDeps): {
 } {
   let timer: ReturnType<typeof setTimeout> | null = null
   let disposed = false
-  let running = false
+  /** The in-flight tick (at most one): a second caller — another timer firing
+   *  or refreshNow() — JOINS it instead of racing a duplicate run. */
+  let current: Promise<void> | null = null
   let error = ''
   /** Sources backed off until this timestamp after a 429. */
   let backoffUntil = 0
 
-  const refreshOnce = async (): Promise<void> => {
-    if (running) return
-    running = true
+  const refreshOnce = (): Promise<void> => {
+    if (current !== null) return current
+    const run = (async (): Promise<void> => {
     // The error slot reflects THIS tick only: clearing it here lets a
     // recovered source drop its old failure from /status and keeps
     // refreshNow() honest (a successful run must not re-throw the previous
@@ -69,9 +71,14 @@ export function createRefresher(deps: RefresherDeps): {
       // unhandled rejection — an escaping rejection here is what killed the
       // host process (exit code 1, fixed 2026-08-22).
       error = cause instanceof Error ? cause.message : String(cause)
-    } finally {
-      running = false
     }
+    })()
+    current = run
+    const release = (): void => { current = null }
+    // Never create an unobserved-rejection surface: the release handlers
+    // always return void, so the derived promise can never reject.
+    run.then(release, release)
+    return run
   }
 
   /** Timer callback wrapper: a throw inside the chain must stay contained. */
@@ -94,6 +101,15 @@ export function createRefresher(deps: RefresherDeps): {
       return
     }
     if (!prefs.autoRefreshEnabled) return
+    // Drop any timer already armed BEFORE re-arming. A restart mid-tick
+    // (prefs.update() = dispose()+start()) leaves the in-flight tick's
+    // own .finally(scheduleNext) about to arm a SECOND timer; without this
+    // clearTimeout the two chains interleave forever and the polite ≥60s
+    // cadence silently doubles. Clearing keeps exactly one chain alive.
+    if (timer !== null) {
+      clearTimeout(timer)
+      timer = null
+    }
     const intervalMs = Math.max(MIN_INTERVAL_SECONDS, prefs.refreshIntervalSeconds) * 1000
     timer = setTimeout(tick, intervalMs)
   }
@@ -112,8 +128,11 @@ export function createRefresher(deps: RefresherDeps): {
       timer = null
     },
     async refreshNow(): Promise<void> {
+      // JOIN an in-flight tick instead of returning "ok" while the actual
+      // run is still racing the upstream (the old running-guard early return
+      // answered success for a refresh that had not happened yet).
       await refreshOnce()
-      if (error !== '' ) throw new DsmError(502, error)
+      if (error !== '') throw new DsmError(502, error)
     },
     lastError(): string {
       return error

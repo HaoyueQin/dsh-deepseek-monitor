@@ -108,3 +108,57 @@ describe('refresher error accounting', () => {
     await expect(r.refreshNow()).resolves.toBeUndefined()
   })
 })
+
+describe('single-chain invariant (restart mid-tick)', () => {
+  it('keeps exactly one armed timer when prefs restart during an in-flight tick', async () => {
+    const deps = makeDeps()
+    let release!: () => void
+    deps.balanceGets.mockImplementationOnce(() => new Promise<void>((resolve) => { release = resolve }))
+    const r = build(deps)
+    r.start()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(deps.balanceGets).toHaveBeenCalledTimes(1)
+
+    // Exactly what prefs.update() does while the upstream fetch is pending.
+    r.dispose()
+    r.start()
+    release()
+    await vi.advanceTimersByTimeAsync(0) // flush the in-flight tick + its .finally(scheduleNext)
+
+    // One chain, not two: the duplicate second chain doubled the cadence.
+    expect(vi.getTimerCount()).toBe(1)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(deps.balanceGets).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(deps.balanceGets).toHaveBeenCalledTimes(3)
+  })
+})
+
+describe('refreshNow joins the in-flight tick', () => {
+  it('waits for a running tick instead of answering success early', async () => {
+    const deps = makeDeps()
+    let release!: (value: BalanceSnapshot) => void
+    deps.balanceGets.mockImplementationOnce(() => new Promise<BalanceSnapshot>((resolve) => { release = resolve }))
+    const r = build(deps)
+    r.start()
+    await vi.advanceTimersByTimeAsync(60_000)
+    const joined = r.refreshNow()
+    release(snap())
+    await expect(joined).resolves.toBeUndefined()
+    expect(deps.balanceGets).toHaveBeenCalledTimes(1)
+  })
+
+  it('surfaces the failure of the tick it joins', async () => {
+    const deps = makeDeps()
+    let release!: () => void
+    deps.balanceGets.mockImplementationOnce(() => new Promise<BalanceSnapshot>((_resolve, reject) => {
+      release = () => { reject(new DsmError(502, 'slow fail')) }
+    }))
+    const r = build(deps)
+    r.start()
+    await vi.advanceTimersByTimeAsync(60_000)
+    const joined = r.refreshNow()
+    release()
+    await expect(joined).rejects.toThrow('slow fail')
+  })
+})
