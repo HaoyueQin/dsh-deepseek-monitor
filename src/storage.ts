@@ -214,3 +214,8 @@ export function sharedStore(storageDomain: Context['storageDomain'] | undefined)
   g[STORE_KEY] = store
   return store
 }
+
+/** Reset the process-level store cache (test seam only). */
+export function _resetSharedStoreForTests(): void {
+  delete (globalThis as unknown as Record<string, unknown>)[STORE_KEY]
+}

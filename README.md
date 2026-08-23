@@ -56,6 +56,7 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 ```sh
 pnpm install
 pnpm typecheck   # tsc --noEmit
+pnpm test        # vitest run
 pnpm build       # tsc declarations + tsdown (host ESM + 双通道 client bundle)
 pnpm watch       # tsdown --watch
 ```
