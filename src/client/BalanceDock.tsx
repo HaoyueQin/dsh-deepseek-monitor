@@ -3,12 +3,14 @@
  *
  * Architecture: this slot component is an INVISIBLE ANCHOR — the official
  * `conversation.composer.dock` seat gives it session identity and lifecycle,
- * but it renders nothing visible. The visible 「｜ 余额 …」 group is appended
- * directly INTO the shipped StatsLine's text flow (previous sibling), so it
- * can never overlap the other groups: it participates in their centering and
- * ellipsis like any trailing group. The host's React re-renders may wipe the
- * appended node; a MutationObserver re-appends on the next frame, so the
- * group self-heals.
+ * but it renders nothing visible. The visible 「｜ 余额 …」 group OVERLAYS the
+ * shipped StatsLine's right edge (absolutely positioned inside it), so its
+ * placement can never drift: the host line is a centered nowrap TEXT block,
+ * and a node injected into its inline flow gets shuffled by React
+ * reconciliation — observed left, right, AND mid-line across re-renders. An
+ * absolutely positioned box ignores sibling order entirely. The host root's
+ * right padding is grown by the band's measured width so the centered text
+ * keeps its ellipsis behaviour and never slides under the overlay.
  *
  * Display policy (all must hold): stats row present · session's latest route
  * is an official DeepSeek model · monitor service alive.
@@ -32,6 +34,20 @@ export function isOfficialDeepSeek(route: { provider: string, model: string } | 
   return route.model.toLowerCase().startsWith('deepseek')
     || route.provider === 'deepseek'
     || route.provider === 'llm-deepseek'
+}
+
+/** Visible text of the stats row EXCLUDING our own band (a leftover band
+ *  would otherwise satisfy the hasStats gate forever after a React wipe). */
+function statsTextLength(row: HTMLElement): number {
+  let n = 0
+  const walk = (node: Node): void => {
+    for (const child of node.childNodes) {
+      if (child instanceof HTMLElement && child.hasAttribute('data-dsm-band')) continue
+      n += child.textContent?.length ?? 0
+    }
+  }
+  walk(row)
+  return n
 }
 
 export function BalanceDock(props: BalanceDockProps): ReactNode {
@@ -59,22 +75,46 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
     return () => { disposed = true; window.clearInterval(timer) }
   }, [props.sessionId])
 
-  // Band integration: keep the appended group in sync with gates + data.
+  // Band integration: keep the overlay pinned to the stats row's right edge,
+  // in sync with gates + data.
   useEffect(() => {
     const t0 = props.t as ((key: keyof typeof en) => string) | undefined
     if (t0 === undefined) return
     let raf = 0
+    /** Release the reserved padding / positioning we put on the host row. */
+    const releaseRow = (row: HTMLElement): void => {
+      if (row.dataset.dsmBandPad !== undefined) {
+        delete row.dataset.dsmBandPad
+        row.style.paddingRight = ''
+      }
+      if (row.dataset.dsmBandRel === '1') {
+        delete row.dataset.dsmBandRel
+        row.style.position = ''
+      }
+    }
     const ensure = (): void => {
       const anchor = anchorRef.current
       if (anchor === null) return
-      const prev = anchor.previousElementSibling as HTMLElement | null
-      const hasStats = prev !== null && (prev.textContent?.trim().length ?? 0) > 0
-      const visible = hasStats && alive === true && isOfficialDeepSeek(route)
-      const existing = prev?.querySelector<HTMLElement>('[data-dsm-band]') ?? null
-      if (!visible || prev === null) {
+      const row = anchor.previousElementSibling as HTMLElement | null
+      const hasStats = row !== null && statsTextLength(row) > 0
+      const existing = row?.querySelector<HTMLElement>('[data-dsm-band]') ?? null
+      const visible = hasStats && row !== null && alive === true && isOfficialDeepSeek(route)
+      if (!visible || row === null) {
         existing?.remove()
+        if (row !== null) releaseRow(row)
         return
       }
+      // One-time positioning setup: the host root is static; our overlay
+      // needs it as the containing block. Both flags make the additions
+      // reversible without touching the host stylesheet.
+      if (row.dataset.dsmBandRel === undefined && getComputedStyle(row).position === 'static') {
+        row.dataset.dsmBandRel = '1'
+        row.style.position = 'relative'
+      }
+      // Kill any stray band React reconciliation left elsewhere in the row.
+      row.querySelectorAll('[data-dsm-band]').forEach((node) => {
+        if (node !== existing) node.remove()
+      })
       let band = existing
       if (band === null) {
         band = document.createElement('span')
@@ -85,6 +125,7 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
         sep.style.cssText = 'margin:0 10px;color:var(--dsw-alias-separator-primary,#bbb)'
         const value = document.createElement('span')
         band.append(sep, value)
+        row.appendChild(band)
       }
       const valueEl = band.lastElementChild as HTMLElement
       const b = status?.balance ?? null
@@ -92,8 +133,20 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
       valueEl.textContent = b !== null ? `${b.totalBalance} ${b.currency}` : '--'
       valueEl.style.color = low ? 'var(--dsw-alias-danger-fg, #c0392b)' : ''
       band.title = `${t0('balanceLabel')}: ${valueEl.textContent}`
-      // Re-append only when detached or misplaced (React wipes/reorders).
-      if (band.parentElement !== prev) prev.appendChild(band)
+      // Pin RIGHT, deterministically: absolute overlay at the content-box
+      // right edge (the row's own padding), vertically centred on the line.
+      // Sibling order — whatever React does to its own children — cannot move it.
+      const padR = Number.parseFloat(getComputedStyle(row).paddingRight) || 0
+      band.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);right:${padR}px;z-index:1;white-space:nowrap;line-height:inherit;`
+      // Reserve the band's measured width in the row's right padding so the
+      // centered stats text ellipsises BEFORE reaching the overlay instead of
+      // sliding under it.
+      // Reserve the band's FULL measured width beyond the original padding:
+      // the overlay's right edge sits at the original content edge and grows
+      // leftward, so the centered text must ellipsize bandWidth earlier.
+      const base = Number.parseFloat(row.dataset.dsmBandPad ?? String(padR))
+      row.dataset.dsmBandPad = String(base)
+      row.style.paddingRight = `${base + Math.max(band.offsetWidth, 0)}px`
     }
     const schedule = (): void => {
       cancelAnimationFrame(raf)
@@ -113,8 +166,10 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
     return () => {
       cancelAnimationFrame(raf)
       observer.disconnect()
-      // Fiber disposal removes our node with the row.
-      anchorRef.current?.previousElementSibling?.querySelector('[data-dsm-band]')?.remove()
+      // Fiber disposal: drop our overlay and undo the row additions.
+      const row = anchorRef.current?.previousElementSibling as HTMLElement | null
+      row?.querySelector('[data-dsm-band]')?.remove()
+      if (row !== null) releaseRow(row)
     }
   }, [alive, status, route, props.sessionId, props.t])
 
