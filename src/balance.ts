@@ -45,7 +45,6 @@ export function createBalanceService(deps: BalanceDeps): {
   let fetchedAt = 0
   let error = ''
   let inFlight: Promise<BalanceSnapshot> | null = null
-  let loggedPayload = false
 
   const fetchFresh = async (): Promise<BalanceSnapshot> => {
     const resolved = await deps.credentials.resolve(deps.keyRef ?? DEFAULT_KEY_REF)
@@ -72,13 +71,8 @@ export function createBalanceService(deps: BalanceDeps): {
       is_available?: boolean
       balance_infos?: Array<{ currency?: string, total_balance?: string, granted_balance?: string, topped_up_balance?: string }>
     }
-    // Diagnostics (first fetch per process only): the API returns MULTIPLE
-    // currency entries (USD before CNY observed 2026-08-22) — logging the raw
-    // shape guards against ordering/shape drift. No secrets in the payload.
-    if (!loggedPayload) {
-      loggedPayload = true
-      console.info('[dsm-balance] raw payload:', JSON.stringify(body))
-    }
+    // Shape drift surfaces as a thrown DsmError below — the raw payload is
+    // deliberately NOT logged (host logs should stay free of account data).
     const infos = parsed.balance_infos ?? []
     const info = pickCnyBalanceInfo(infos)
     if (info === undefined || typeof info.total_balance !== 'string') {

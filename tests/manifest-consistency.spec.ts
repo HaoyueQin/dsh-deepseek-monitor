@@ -17,6 +17,7 @@ const pkg = JSON.parse(read('package.json')) as {
 const manifest = JSON.parse(read('dsh.plugin.json')) as {
   id: string
   version: string
+  description: string
   client: { main: string }
 }
 
@@ -44,5 +45,12 @@ describe('manifest consistency', () => {
     expect(files).toContain('dsh.plugin.json')
     expect(files).toContain('cordis.patch.yml')
     expect(pkg.main).toBe('lib/index.js')
+  })
+
+  it('the manifest description never re-advertises a retired surface', () => {
+    // The composer.dock stats band was removed in f26a4ef; the description
+    // drifted for one release. Lock the replacement wording instead.
+    expect(manifest.description).not.toMatch(/统计带|stats band|composer\.dock/)
+    expect(manifest.description).toMatch('conversation.input.right')
   })
 })

@@ -33,8 +33,10 @@ export function createRefresher(deps: RefresherDeps): {
    *  or refreshNow() — JOINS it instead of racing a duplicate run. */
   let current: Promise<void> | null = null
   let error = ''
-  /** Sources backed off until this timestamp after a 429. */
-  let backoffUntil = 0
+  /** Per-source 429 backoffs (one source being rate-limited must not
+   *  suppress the other's refresh in the same cycle). */
+  let balanceBackoffUntil = 0
+  let usageBackoffUntil = 0
 
   const refreshOnce = (): Promise<void> => {
     if (current !== null) return current
@@ -47,23 +49,23 @@ export function createRefresher(deps: RefresherDeps): {
     try {
       const prefs = deps.store.getPrefs()
       const now = Date.now()
-      if (now >= backoffUntil) {
+      if (now >= balanceBackoffUntil) {
         try {
           const snapshot = await deps.balance.get(true)
           await deps.store.setBalance(snapshot)
         } catch (cause) {
           error = cause instanceof Error ? cause.message : String(cause)
-          if (cause instanceof DsmError && cause.status === 429) backoffUntil = Date.now() + prefs.refreshIntervalSeconds * 1000
+          if (cause instanceof DsmError && cause.status === 429) balanceBackoffUntil = Date.now() + prefs.refreshIntervalSeconds * 1000
         }
       }
-      if (await deps.hasPlatformToken() && Date.now() >= backoffUntil) {
+      if (await deps.hasPlatformToken() && Date.now() >= usageBackoffUntil) {
         try {
           const now2 = new Date()
           const result = await deps.usage.fetch(now2.getFullYear(), now2.getMonth() + 1)
           await deps.store.setUsage(result)
         } catch (cause) {
           error = cause instanceof Error ? cause.message : String(cause)
-          if (cause instanceof DsmError && cause.status === 429) backoffUntil = Date.now() + prefs.refreshIntervalSeconds * 1000
+          if (cause instanceof DsmError && cause.status === 429) usageBackoffUntil = Date.now() + prefs.refreshIntervalSeconds * 1000
         }
       }
     } catch (cause) {

@@ -48,9 +48,10 @@ describe('capture script invariants', () => {
   })
 
   it('never transmits anything anywhere', () => {
-    const outboundUrl = new RegExp('fetch' + String.fromCharCode(92) + '(' + String.fromCharCode(92) + 's*' + String.fromCharCode(39) + '"' + String.fromCharCode(96) + ']' + 'https?://')
-    expect(CAPTURE_SCRIPT).not.toMatch(outboundUrl)
-    // The only allowed URL-ish token is none at all: zero http occurrences.
+    // No outbound network call to an explicit URL (fetch/XHR/sendBeacon with
+    // a literal http(s) target), and zero http(s) occurrences at all — the
+    // script only MONKEY-PATCHES fetch; it never originates requests.
+    expect(CAPTURE_SCRIPT).not.toMatch(/(?:fetch|sendBeacon|open)\s*\(\s*['"`]https?:/)
     expect(CAPTURE_SCRIPT.includes('http://')).toBe(false)
     expect(CAPTURE_SCRIPT.includes('https://')).toBe(false)
   })

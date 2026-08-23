@@ -92,13 +92,15 @@ export function BalanceChip(props: BalanceChipProps): ReactNode {
   // parsed amount, so both guards live on the same expression.
   const valueText = balance === null || amount === null ? '--' : balance.totalBalance
   const symbol = balance === null ? '' : currencySymbol(balance.currency)
+  const summary = `${t('balanceLabel')}: ${symbol}${valueText}`
 
   return (
     <span
       data-dsm-composer-chip=""
       data-dsm-provider={route?.provider ?? ''}
       data-dsm-model={route?.model ?? ''}
-      title={`${t('balanceLabel')}: ${symbol}${valueText}`}
+      title={summary}
+      aria-label={summary}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

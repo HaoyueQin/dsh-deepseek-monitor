@@ -82,10 +82,18 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
       writeJson(res, { ok: false, error: { code: 'forbidden', message: 'untrusted host' } }, 403)
       return
     }
-    const url = req.url ?? ''
+    const rawUrl = req.url ?? ''
     const method = req.method ?? 'GET'
+    // Exact-name dispatch inside the mounted API space. The webserver hands
+    // us the full path ('/dsm/api/status'); the bare remainder ('/status') is
+    // tolerated for mount-shape independence. Query/hash are stripped so
+    // '/dsm/api/status?x=1' still routes, and a nested '/dsm/api/x/status'
+    // can no longer fall into the status branch the way suffix matching
+    // allowed.
+    const path = rawUrl.split(/[?#]/, 1)[0] ?? ''
+    const routePath = path.startsWith('/dsm/api/') ? path.slice('/dsm/api'.length) : path
     try {
-      if ((method === 'GET' || method === 'POST') && url.endsWith('/status')) {
+      if ((method === 'GET' || method === 'POST') && routePath === '/status') {
         if (method === 'POST') await readJsonBody(req)
         const [apiKey, platformToken] = await Promise.all([
           services.apiKeyState(),
@@ -106,7 +114,7 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
         writeJson(res, { ok: true, value: status })
         return
       }
-      if (method === 'POST' && url.endsWith('/balance')) {
+      if (method === 'POST' && routePath === '/balance') {
         const body = await readJsonBody(req) as { force?: unknown }
         // Cache-first default: only an EXPLICIT force:true hits the upstream
         // API, so a client that forgets the flag can never turn into a poller
@@ -115,7 +123,7 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
         writeJson(res, { ok: true, value: await services.balance.get(force) })
         return
       }
-      if (method === 'POST' && url.endsWith('/usage')) {
+      if (method === 'POST' && routePath === '/usage') {
         const body = await readJsonBody(req) as { year?: unknown, month?: unknown, force?: unknown }
         const now = new Date()
         const year = typeof body?.year === 'number' ? body.year : now.getFullYear()
@@ -126,7 +134,7 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
         writeJson(res, { ok: true, value: await services.usage.get(year, month, body?.force === true) })
         return
       }
-      if (method === 'POST' && url.endsWith('/token')) {
+      if (method === 'POST' && routePath === '/token') {
         const body = await readJsonBody(req) as { action?: unknown, value?: unknown }
         if (body?.action === 'set') {
           if (typeof body.value !== 'string') throw new DsmError(400, 'token set needs a string value')
@@ -141,16 +149,16 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
         }
         throw new DsmError(400, "token action must be 'set' or 'clear'")
       }
-      if (method === 'GET' && url.endsWith('/prefs')) {
+      if (method === 'GET' && routePath === '/prefs') {
         writeJson(res, { ok: true, value: services.prefs.get() })
         return
       }
-      if (method === 'POST' && url.endsWith('/prefs')) {
+      if (method === 'POST' && routePath === '/prefs') {
         const body = await readJsonBody(req) as Record<string, unknown>
         writeJson(res, { ok: true, value: await services.prefs.update(sanitizePrefsPatch(body ?? {})) })
         return
       }
-      if (method === 'POST' && url.endsWith('/cache')) {
+      if (method === 'POST' && routePath === '/cache') {
         const body = await readJsonBody(req) as { action?: unknown }
         if (body?.action === 'clear') {
           await services.cache.clear()
@@ -164,7 +172,7 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
         }
         throw new DsmError(400, "cache action must be 'clear' or 'refresh'")
       }
-      if (method === 'POST' && url.endsWith('/route')) {
+      if (method === 'POST' && routePath === '/route') {
         const body = await readJsonBody(req) as { sessionId?: unknown }
         if (typeof body?.sessionId !== 'string' || body.sessionId === '') {
           throw new DsmError(400, 'route needs a non-empty sessionId')
@@ -176,7 +184,7 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
         // Body must be consumed before answering so keep-alive stays framed.
         await readJsonBody(req)
       }
-      throw new DsmError(404, `unknown endpoint ${method} ${url}`)
+      throw new DsmError(404, `unknown endpoint ${method} ${rawUrl}`)
     } catch (err) {
       const logger = (ctx as unknown as { logger?: { warn(message: unknown): void } }).logger
       if (!(err instanceof DsmError)) logger?.warn(err instanceof Error ? err : new Error(String(err)))

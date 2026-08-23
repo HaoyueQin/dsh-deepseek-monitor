@@ -104,4 +104,15 @@ describe('unknown endpoints', () => {
     expect(res.statusCode).toBe(404)
     expect(JSON.parse(res.body ?? '{}').error.code).toBe('dsm_api_error')
   })
+
+  it('a nested lookalike path no longer falls into a known branch', async () => {
+    // Suffix matching used to serve /status for ANY url ending in /status.
+    const { res } = await call('/dsm/api/evil/status')
+    expect(res.statusCode).toBe(404)
+  })
+
+  it('query strings do not break routing', async () => {
+    const { res } = await call('/dsm/api/status?probe=1')
+    expect(res.statusCode).toBe(200)
+  })
 })

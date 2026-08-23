@@ -10,7 +10,7 @@
  * prefers-color-scheme.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, MouseEvent as ReactMouseEvent, ReactNode } from 'react'
 import Zap from 'lucide-react/dist/esm/icons/zap'
 import Brain from 'lucide-react/dist/esm/icons/brain'
@@ -158,19 +158,19 @@ const pressFeedback = {
   onMouseEnter: (event: ReactMouseEvent<HTMLButtonElement>): void => {
     if (!event.currentTarget.disabled) event.currentTarget.style.opacity = '0.88'
   },
-  onMouseLeave: (event: React.MouseEvent<HTMLButtonElement>): void => {
+  onMouseLeave: (event: ReactMouseEvent<HTMLButtonElement>): void => {
     const el = event.currentTarget
     el.style.opacity = ''
     el.style.transform = ''
     el.style.filter = ''
   },
-  onMouseDown: (event: React.MouseEvent<HTMLButtonElement>): void => {
+  onMouseDown: (event: ReactMouseEvent<HTMLButtonElement>): void => {
     if (!event.currentTarget.disabled) {
       event.currentTarget.style.transform = 'translateY(1px)'
       event.currentTarget.style.filter = 'brightness(0.85)'
     }
   },
-  onMouseUp: (event: React.MouseEvent<HTMLButtonElement>): void => {
+  onMouseUp: (event: ReactMouseEvent<HTMLButtonElement>): void => {
     event.currentTarget.style.transform = ''
     event.currentTarget.style.filter = ''
   },
@@ -191,10 +191,20 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const [busy, setBusy] = useState(false)
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
 
-  /** Auto-clear a transient ok notice so buttons always visibly acknowledge. */
+  /** Auto-clear a transient ok notice so buttons always visibly acknowledge.
+   *  The timer handle is tracked so an unmount cannot leave a stray timeout
+   *  firing into a disposed fiber. */
+  const noticeTimerRef = useRef<number | null>(null)
+  useEffect(() => () => {
+    if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current)
+  }, [])
   const flashNotice = useCallback((text: string): void => {
     setNotice({ kind: 'ok', text })
-    window.setTimeout(() => { setNotice(current => (current !== null && current.text === text ? null : current)) }, 2000)
+    if (noticeTimerRef.current !== null) window.clearTimeout(noticeTimerRef.current)
+    noticeTimerRef.current = window.setTimeout(() => {
+      noticeTimerRef.current = null
+      setNotice(current => (current !== null && current.text === text ? null : current))
+    }, 2000)
   }, [])
 
   const loadStatus = useCallback((): void => {

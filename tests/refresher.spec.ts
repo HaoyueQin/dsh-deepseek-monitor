@@ -26,7 +26,7 @@ function makeDeps(overrides: Partial<MonitorPrefs> = {}): Deps {
   }
 }
 
-function build(deps: Deps) {
+function build(deps: Deps, hasPlatformToken: () => Promise<boolean> = async () => false) {
   return createRefresher({
     store: {
       getPrefs: () => deps.prefs,
@@ -40,7 +40,7 @@ function build(deps: Deps) {
     },
     balance: { get: (force: boolean) => deps.balanceGets(force) },
     usage: { fetch: (year: number, month: number) => deps.usageFetches(year, month) },
-    hasPlatformToken: async () => false,
+    hasPlatformToken,
   })
 }
 
@@ -131,6 +131,37 @@ describe('single-chain invariant (restart mid-tick)', () => {
     expect(deps.balanceGets).toHaveBeenCalledTimes(2)
     await vi.advanceTimersByTimeAsync(60_000)
     expect(deps.balanceGets).toHaveBeenCalledTimes(3)
+  })
+})
+
+describe('per-source 429 backoff', () => {
+  it('a rate-limited balance does not suppress the same-tick usage refresh', async () => {
+    const deps = makeDeps()
+    deps.balanceGets.mockRejectedValueOnce(new DsmError(429, 'slow down'))
+    deps.usageFetches.mockResolvedValue({ year: 2026, month: 8, models: [], days: [], monthCost: 0, fetchedAt: 1 })
+    const r = build(deps, async () => true)
+    r.start()
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(r.lastError()).toBe('slow down')
+    expect(deps.balanceGets).toHaveBeenCalledTimes(1)
+    expect(deps.usageFetches).toHaveBeenCalledTimes(1)
+  })
+
+  it('an active backoff skips only its own source on an immediate manual reload', async () => {
+    // Backoff lasts one interval, so it expires exactly at the next tick;
+    // its real job is guarding the WITHIN-cycle path (a manual 重载缓存 right
+    // after a 429 must not re-hit the rate-limited source, while the other
+    // source still refreshes).
+    const deps = makeDeps()
+    deps.balanceGets.mockRejectedValueOnce(new DsmError(429, 'slow down'))
+    const r = build(deps, async () => true)
+    r.start()
+    await vi.advanceTimersByTimeAsync(60_000) // tick 1: balance 429 → backoff arms
+    expect(deps.balanceGets).toHaveBeenCalledTimes(1)
+    await expect(r.refreshNow()).resolves.toBeUndefined()
+    expect(deps.balanceGets).toHaveBeenCalledTimes(1) // skipped by its own backoff
+    expect(deps.usageFetches).toHaveBeenCalledTimes(2) // unaffected source refreshed
+    expect(r.lastError()).toBe('')
   })
 })
 
