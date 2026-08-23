@@ -45,11 +45,10 @@ A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring*
 ## Install
 
 ```sh
-# available once published to npm
 dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 ```
 
-> Not yet on npm. Clone, `pnpm build`, then mount the artifact directory via a local profile / injector.
+> Published on npm: [dsh-deepseek-monitor](https://www.npmjs.com/package/dsh-deepseek-monitor). Alternatively, download `dsh-deepseek-monitor-<version>.tgz` from [GitHub Releases](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases) and mount it via a local profile / injector.
 
 ## Development
 

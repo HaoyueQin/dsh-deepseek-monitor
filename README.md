@@ -45,11 +45,10 @@ DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://githu
 ## 安装
 
 ```sh
-# npm 发布后可用
 dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 ```
 
-> 当前尚未发布 npm。可克隆本仓库 `pnpm build` 后，将产物目录通过本地 profile / 注入器方式装载。
+> 已在 npm 发布：[dsh-deepseek-monitor](https://www.npmjs.com/package/dsh-deepseek-monitor)。也可以从 [GitHub Releases](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases) 下载 `dsh-deepseek-monitor-<version>.tgz`，通过本地 profile / 注入器方式装载。
 
 ## 开发
 
