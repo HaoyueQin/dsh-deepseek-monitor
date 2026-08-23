@@ -3,14 +3,14 @@
  *
  * Architecture: this slot component is an INVISIBLE ANCHOR — the official
  * `conversation.composer.dock` seat gives it session identity and lifecycle,
- * but it renders nothing visible. The visible 「｜ 余额 …」 group OVERLAYS the
- * shipped StatsLine's right edge (absolutely positioned inside it), so its
- * placement can never drift: the host line is a centered nowrap TEXT block,
- * and a node injected into its inline flow gets shuffled by React
- * reconciliation — observed left, right, AND mid-line across re-renders. An
- * absolutely positioned box ignores sibling order entirely. The host root's
- * right padding is grown by the band's measured width so the centered text
- * keeps its ellipsis behaviour and never slides under the overlay.
+ * but it renders nothing visible. The visible 「｜ 余额 …」 group joins the
+ * shipped StatsLine's INLINE FLOW as its last child, so the balance reads
+ * immediately after the host's stats groups in the same centered line and
+ * typography. React reconciliation can shuffle or drop that foreign node
+ * across re-renders; the mutation observer re-appends it within a frame and
+ * removes any stray copy, so the observed mid-line drift self-corrects. (An
+ * earlier absolutely-pinned version was deterministic but left a wide dead
+ * gap between the centered text and the band on the row's right edge.)
  *
  * Display policy (all must hold): stats row present · session's latest route
  * is an official DeepSeek model · monitor service alive.
@@ -34,6 +34,7 @@ export function isOfficialDeepSeek(route: { provider: string, model: string } | 
   if (route === undefined || route === null) return false
   return route.model.toLowerCase().startsWith('deepseek')
     || route.provider === 'deepseek'
+    || route.provider === 'deepseek-official'
     || route.provider === 'llm-deepseek'
 }
 
@@ -76,28 +77,12 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
     return () => { disposed = true; window.clearInterval(timer) }
   }, [props.sessionId])
 
-  // Band integration: keep the overlay pinned to the stats row's right edge,
-  // in sync with gates + data.
+  // Band integration: keep the in-flow band after the stats row's own text,
+  // in sync with the gates + data.
   useEffect(() => {
     const t0 = props.t as ((key: keyof typeof en) => string) | undefined
     if (t0 === undefined) return
     let raf = 0
-    /** Release the reserved padding / positioning we put on the host row.
-     *  Accepts null/undefined BY DESIGN: at cleanup time React may already
-     *  have detached/null the anchor, and a throw here escapes the effect
-     *  boundary — which retires the WHOLE conversation slot entry (observed:
-     *  blank center pane until reload). */
-    const releaseRow = (row: HTMLElement | null | undefined): void => {
-      if (row === null || row === undefined) return
-      if (row.dataset.dsmBandPad !== undefined) {
-        delete row.dataset.dsmBandPad
-        row.style.paddingRight = ''
-      }
-      if (row.dataset.dsmBandRel === '1') {
-        delete row.dataset.dsmBandRel
-        row.style.position = ''
-      }
-    }
     const applyBand = (): void => {
       const anchor = anchorRef.current
       if (anchor === null) return
@@ -106,25 +91,21 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
       // normalize so every guard below only ever sees null.
       const row = (anchor.previousElementSibling ?? null) as HTMLElement | null
       const hasStats = row !== null && statsTextLength(row) > 0
-      const existing = row?.querySelector<HTMLElement>('[data-dsm-band]') ?? null
       const visible = hasStats && row !== null && alive === true && isOfficialDeepSeek(route)
       if (!visible || row === null) {
-        existing?.remove()
-        if (row !== null) releaseRow(row)
+        row?.querySelectorAll('[data-dsm-band]').forEach((node) => { node.remove() })
         return
       }
-      // One-time positioning setup: the host root is static; our overlay
-      // needs it as the containing block. Both flags make the additions
-      // reversible without touching the host stylesheet.
-      if (row.dataset.dsmBandRel === undefined && getComputedStyle(row).position === 'static') {
-        row.dataset.dsmBandRel = '1'
-        row.style.position = 'relative'
+      // Keep ONE band, and keep it as the row's LAST child: the host row is a
+      // centered nowrap block, so an appended inline span renders immediately
+      // after the host's stats groups in the same line and typography. React
+      // reconciliation can move or drop the foreign node across re-renders —
+      // move it back to the end and remove any stray copy it left behind.
+      const candidates = row.querySelectorAll('[data-dsm-band]')
+      let band: HTMLElement | null = candidates.length > 0 ? candidates[0] as HTMLElement : null
+      for (const node of candidates) {
+        if (node !== band) node.remove()
       }
-      // Kill any stray band React reconciliation left elsewhere in the row.
-      row.querySelectorAll('[data-dsm-band]').forEach((node) => {
-        if (node !== existing) node.remove()
-      })
-      let band = existing
       if (band === null) {
         band = document.createElement('span')
         band.setAttribute('data-dsm-band', '')
@@ -133,26 +114,20 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
         sep.textContent = '|'
         sep.style.cssText = 'margin:0 10px;color:var(--dsw-alias-separator-primary,#bbb)'
         const value = document.createElement('span')
+        value.setAttribute('data-dsm-band-value', '')
         band.append(sep, value)
         row.appendChild(band)
+      } else if (band !== row.lastElementChild) {
+        // React moved the band mid-line: move it back to the end.
+        row.appendChild(band)
       }
-      const valueEl = band.lastElementChild as HTMLElement
+      const valueEl = band.querySelector<HTMLElement>('[data-dsm-band-value]')
+        ?? band.lastElementChild as HTMLElement
       const b = status?.balance ?? null
       const low = status?.lowBalance === true
       valueEl.textContent = b !== null ? formatBalance(b) : '--'
       valueEl.style.color = low ? 'var(--dsw-alias-danger-fg, #c0392b)' : ''
       band.title = `${t0('balanceLabel')}: ${valueEl.textContent}`
-      // Pin RIGHT, deterministically: absolute overlay at the content-box
-      // right edge (the row's own padding), vertically centred on the line.
-      // Sibling order — whatever React does to its own children — cannot move it.
-      const padR = Number.parseFloat(getComputedStyle(row).paddingRight) || 0
-      band.style.cssText = `position:absolute;top:50%;transform:translateY(-50%);right:${padR}px;z-index:1;white-space:nowrap;line-height:inherit;`
-      // Reserve the band's FULL measured width beyond the original padding:
-      // the overlay's right edge sits at the original content edge and grows
-      // leftward, so the centered text must ellipsize bandWidth earlier.
-      const base = Number.parseFloat(row.dataset.dsmBandPad ?? String(padR))
-      row.dataset.dsmBandPad = String(base)
-      row.style.paddingRight = `${base + Math.max(band.offsetWidth, 0)}px`
     }
     // Our integration must NEVER throw into the host slot: an escaping error
     // from an effect or its cleanup retires the conversation entry (the blank
@@ -179,14 +154,13 @@ export function BalanceDock(props: BalanceDockProps): ReactNode {
     return () => {
       cancelAnimationFrame(raf)
       observer.disconnect()
-      // Fiber disposal: drop our overlay and undo the row additions. The
-      // anchor may already be detached (React nulls refs during unmount), so
-      // normalize undefined AND contain any residual failure — a throw here
-      // is what retired the conversation entry on session switches.
+      // Fiber disposal: drop every band we added. The anchor may already be
+      // detached (React nulls refs during unmount), so normalize undefined
+      // AND contain any residual failure — a throw here is what retired the
+      // conversation entry on session switches.
       try {
         const row = (anchorRef.current?.previousElementSibling ?? null) as HTMLElement | null
-        row?.querySelector('[data-dsm-band]')?.remove()
-        releaseRow(row)
+        row?.querySelectorAll('[data-dsm-band]').forEach((node) => { node.remove() })
       } catch { /* never let disposal break the host slot */ }
     }
   }, [alive, status, route, props.sessionId, props.t])
