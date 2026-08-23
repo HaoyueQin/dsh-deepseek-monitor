@@ -108,7 +108,10 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
       }
       if (method === 'POST' && url.endsWith('/balance')) {
         const body = await readJsonBody(req) as { force?: unknown }
-        const force = body?.force !== false
+        // Cache-first default: only an EXPLICIT force:true hits the upstream
+        // API, so a client that forgets the flag can never turn into a poller
+        // that bypasses the TTL. The UI always sends the flag explicitly.
+        const force = body?.force === true
         writeJson(res, { ok: true, value: await services.balance.get(force) })
         return
       }

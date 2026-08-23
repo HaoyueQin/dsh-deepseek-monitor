@@ -110,8 +110,13 @@ export interface UsageResult {
 
 // ── HTTP helpers (host half only) ─────────────────────────────────────────
 
+const textEncoder = new TextEncoder()
+
+/** Wire bytes of one body chunk. Strings count UTF-8 BYTES — .length would
+ *  under-count multi-byte content up to 3x and let an oversized CJK body
+ *  slip past the cap. */
 const byteLength = (chunk: string | Uint8Array): number =>
-  typeof chunk === 'string' ? chunk.length : chunk.byteLength
+  typeof chunk === 'string' ? textEncoder.encode(chunk).length : chunk.byteLength
 
 /** Default cap for a JSON request body; bounds only a misbehaving trusted client. */
 const MAX_JSON_BODY_BYTES = 64 * 1024
