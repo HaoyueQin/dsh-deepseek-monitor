@@ -309,11 +309,10 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const LEGACY_MODELS = new Set(['deepseek-chat', 'deepseek-reasoner', 'deepseek-chat & deepseek-reasoner'])
   const ROW_ORDER = new Map([['flash', 0], ['flash-vision', 1], ['pro', 2]])
   const allModels = usage?.models ?? []
-  const rowModels: Array<{ model: UsageModelSummary | null }> = allModels
+  const rowModels: UsageModelSummary[] = allModels
     .filter(m => !LEGACY_MODELS.has(m.name) && !LEGACY_MODELS.has(m.key))
     .sort((a, b) => (ROW_ORDER.get(a.key) ?? 99) - (ROW_ORDER.get(b.key) ?? 99) || a.name.localeCompare(b.name))
-    .map(m => ({ model: m }))
-  const maxTokens = Math.max(...rowModels.map(r => r.model?.totalTokens ?? 0), 1)
+  const maxTokens = Math.max(...rowModels.map(m => m.totalTokens), 1)
   const today = usage?.days.find(day => day.date === todayStr()) ?? null
   const monthTotal = usage?.days.reduce((sum, day) => sum + day.totalTokens, 0) ?? 0
 
@@ -451,10 +450,8 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
         ? null
         : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {rowModels.map(({ model }) => (
-                <div key={model?.key ?? model?.name}>
-                  {model !== null ? usageRow(model) : null}
-                </div>
+              {rowModels.map(model => (
+                <div key={model.key}>{usageRow(model)}</div>
               ))}
             </div>
           )}
