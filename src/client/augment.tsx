@@ -89,7 +89,9 @@ export function setupAugment(deps: AugmentDeps): () => void {
       if (entry.root !== null) entry.root.render(createElement(ProviderPanel, { d: d as Record<DeepSeekMonitorKey, string> }))
     }
   }
-  deps.onLocaleChange(refreshTexts)
+  // Keep the unsubscriber: a fiber disposal (HMR) must drop the locale
+  // subscription too, or the stale listener keeps re-rendering forever.
+  const offLocale = deps.onLocaleChange(refreshTexts)
 
   const ensureRowPieces = (li: Element): void => {
     const d = deps.dict()
@@ -211,7 +213,12 @@ export function setupAugment(deps: AugmentDeps): () => void {
           managed.delete(entry)
         }
       }
-      const candidateRows = [...document.querySelectorAll('li')]
+      // Scope the row scan to the open settings dialog: the Models page
+      // rows live there, and scanning every li on the whole page (long
+      // conversation lists included) on every mutation was pure waste.
+      const dialog = document.querySelector('[role="dialog"]')
+      if (dialog === null) return
+      const candidateRows = [...dialog.querySelectorAll('li')]
       for (const li of candidateRows) {
         const name = li.querySelector('[class*="rowName"]')?.textContent?.trim()
         if (name === undefined || name === '' || !ROW_NAMES.has(name)) continue
@@ -259,6 +266,7 @@ export function setupAugment(deps: AugmentDeps): () => void {
 
   return () => {
     disposed = true
+    offLocale()
     window.clearInterval(statusTimer)
     window.clearInterval(safetyTimer)
     observer.disconnect()
