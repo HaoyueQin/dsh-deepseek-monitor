@@ -135,8 +135,8 @@ const cardStyle: CSSProperties = {
 const captionRow: CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }
 const caption: CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--dsw-alias-fg-muted, var(--dsw-alias-label-tertiary, #888))' }
 const mutedText: CSSProperties = { fontSize: 12, color: 'var(--dsw-alias-fg-muted, var(--dsw-alias-label-tertiary, #888))' }
-const errorText: CSSProperties = { fontSize: 12, color: 'var(--dsw-alias-danger-fg, #c0392b)' }
-const okText: CSSProperties = { fontSize: 12, color: 'var(--dsw-alias-success-fg, #1a7f37)' }
+const errorText: CSSProperties = { fontSize: 12, color: 'var(--dsw-alias-state-error-primary, #c0392b)' }
+const okText: CSSProperties = { fontSize: 12, color: 'var(--dsw-alias-state-success-primary, #1a7f37)' }
 const buttonStyle: CSSProperties = {
   appearance: 'none',
   border: '1px solid var(--dsw-alias-border-default, rgba(127,127,127,0.30))',
@@ -587,9 +587,17 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
           }}
         />
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <a href="https://platform.deepseek.com" target="_blank" rel="noreferrer">
-            <button type="button" style={buttonStyle} {...pressFeedback}>{d.openPlatform}</button>
-          </a>
+          {/* A <button> nested in an <a> is invalid interactive-inside-interactive
+              HTML; open the platform through the click handler instead so the
+              control stays a single button with identical chrome. */}
+          <button
+            type="button"
+            style={buttonStyle}
+            {...pressFeedback}
+            onClick={() => { window.open('https://platform.deepseek.com', '_blank', 'noopener,noreferrer') }}
+          >
+            {d.openPlatform}
+          </button>
           <button
             type="button"
             style={buttonStyle}

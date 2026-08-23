@@ -249,7 +249,7 @@ export function setupAugment(deps: AugmentDeps): () => void {
           if (entry.root === null && entry.el.hasAttribute(CHIP)) {
             entry.el.textContent = chipText()
             entry.el.style.color = low
-              ? 'var(--dsw-alias-danger-fg)'
+              ? 'var(--dsw-alias-state-error-primary, #c0392b)'
               : 'var(--dsw-alias-label-tertiary)'
           }
         }
