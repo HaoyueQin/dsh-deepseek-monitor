@@ -121,17 +121,25 @@ const byteLength = (chunk: string | Uint8Array): number =>
 /** Default cap for a JSON request body; bounds only a misbehaving trusted client. */
 const MAX_JSON_BODY_BYTES = 64 * 1024
 
-/** Read an async-iterable request body as UTF-8 text. */
+/** Read an async-iterable request body as UTF-8 text. Chunks are buffered
+ *  and decoded ONCE through a streaming TextDecoder: decoding each chunk
+ *  independently would corrupt a multi-byte UTF-8 sequence split across two
+ *  chunks (a CJK body sliced mid-codepoint by the transport). */
 async function readBodyText(req: DsmHttpRequest, maxBytes: number): Promise<string> {
-  let body = ''
+  const chunks: Uint8Array[] = []
   let bytes = 0
   for await (const chunk of req) {
-    bytes += byteLength(chunk)
+    const encoded = typeof chunk === 'string' ? textEncoder.encode(chunk) : chunk
+    bytes += encoded.byteLength
     if (bytes > maxBytes) {
       throw new DsmError(413, `request body exceeds ${maxBytes} bytes`)
     }
-    body += typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk)
+    chunks.push(encoded)
   }
+  const decoder = new TextDecoder()
+  let body = ''
+  for (const chunk of chunks) body += decoder.decode(chunk, { stream: true })
+  body += decoder.decode()
   return body
 }
 

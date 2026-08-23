@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { readJsonBody } from '../src/wire.ts'
 import { CAPTURE_SCRIPT } from '../src/client/capture-script.ts'
 
-function reqWithChunks(chunks: string[]): any {
+function reqWithChunks(chunks: Array<string | Uint8Array>): any {
   return {
     headers: {},
     [Symbol.asyncIterator]: async function* () {
@@ -26,6 +26,17 @@ describe('readJsonBody byte cap', () => {
 
   it('rejects malformed JSON with 400', async () => {
     await expect(readJsonBody(reqWithChunks(['{oops']))).rejects.toMatchObject({ status: 400 })
+  })
+
+  it('reassembles a UTF-8 sequence split across chunk boundaries', async () => {
+    // '你' = E4 BD A0; slice the byte array mid-codepoint. Per-chunk decoding
+    // (the old behavior) replaced the split character with U+FFFD.
+    const encoded = new TextEncoder().encode('{"你":"好"}')
+    const cut = 4 // inside the first 你
+    await expect(readJsonBody(reqWithChunks([
+      encoded.slice(0, cut),
+      encoded.slice(cut),
+    ]))).resolves.toEqual({ 你: '好' })
   })
 })
 
