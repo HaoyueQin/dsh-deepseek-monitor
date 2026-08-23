@@ -1,6 +1,6 @@
 {
   "name": "dsh-deepseek-monitor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DSH web plugin: DeepSeek balance & platform usage monitoring, integrated into the Models settings provider row and the composer tool row (left of the model name). Replicates the DeepSeekMonitorWindows backend.",
   "homepage": "https://github.com/HaoyueQin/dsh-deepseek-monitor#readme",
   "repository": {
