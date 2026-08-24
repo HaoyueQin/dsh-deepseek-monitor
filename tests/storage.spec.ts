@@ -31,6 +31,16 @@ describe('memory fallback (no storageDomain)', () => {
     expect(prefs.lowBalanceNotify).toBe(true)
     expect(prefs.refreshIntervalSeconds).toBe(60)
   })
+
+  it('round-trips the composer-chip switch and defaults it to on', async () => {
+    const store = sharedStore(undefined)
+    expect(store.getPrefs().composerChipEnabled).toBe(true)
+    await store.setPrefs({ composerChipEnabled: false })
+    expect(store.getPrefs().composerChipEnabled).toBe(false)
+    // A later patch on another key must not resurrect the switch.
+    await store.setPrefs({ lowBalanceNotify: true })
+    expect(store.getPrefs().composerChipEnabled).toBe(false)
+  })
 })
 
 describe('domain swap migration', () => {
@@ -69,6 +79,37 @@ describe('domain swap migration', () => {
     expect(backing.usage.get('balance')).toMatchObject({ totalBalance: '5.00' })
     expect(store.getPrefs().refreshIntervalSeconds).toBe(120)
     expect(store.getBalance()?.currency).toBe('USD')
+  })
+
+  it('reads a legacy prefs row (no composerChipEnabled) as enabled after the swap', async () => {
+    const backing = {
+      prefs: new Map<string, unknown>(),
+      usage: new Map<string, unknown>(),
+      index: new Map<string, unknown>(),
+    }
+    // A row persisted by a build before the switch existed: no
+    // composerChipEnabled key. refreshIntervalSeconds=300 distinguishes the
+    // REAL table (read after the swap) from the boot-window memory defaults.
+    backing.prefs.set('prefs', {
+      autoRefreshEnabled: true,
+      refreshIntervalSeconds: 300,
+      lowBalanceNotify: false,
+      lowBalanceThreshold: 10,
+    })
+    const kv = (m: Map<string, unknown>) => ({
+      get: (k: string) => m.get(k),
+      put: async (k: string, v: unknown) => { m.set(k, v) },
+      delete: async (k: string) => m.delete(k),
+    })
+    const domainStub = {
+      open: async () => ({
+        table: (name: string) => kv(name === 'prefs' ? backing.prefs : name === 'index' ? backing.index : backing.usage),
+      }),
+    }
+    const store = sharedStore(domainStub as never)
+    await vi.waitFor(() => { expect(store.getPrefs().refreshIntervalSeconds).toBe(300) })
+    // The missing optional field must NOT clobber the default to undefined.
+    expect(store.getPrefs().composerChipEnabled).toBe(true)
   })
 })
 

@@ -18,7 +18,7 @@ import ImageIcon from 'lucide-react/dist/esm/icons/image'
 import Sparkles from 'lucide-react/dist/esm/icons/sparkles'
 import type { DeepSeekMonitorKey } from './locales.ts'
 import { currencySymbol } from './balance-format.ts'
-import { fetchBalance, fetchPrefs, fetchStatus, fetchUsage, postCache, postPrefs, postToken } from './api.ts'
+import { DSM_PREFS_CHANGED_EVENT, fetchBalance, fetchPrefs, fetchStatus, fetchUsage, postCache, postPrefs, postToken } from './api.ts'
 import { CAPTURE_SCRIPT } from './capture-script.ts'
 import type { MonitorPrefs, MonitorStatus, UsageModelSummary, UsageResult } from '../wire.ts'
 
@@ -148,6 +148,8 @@ const buttonStyle: CSSProperties = {
   cursor: 'pointer',
 }
 const navButton: CSSProperties = { ...buttonStyle, padding: '0 8px', lineHeight: '20px' }
+/** One settings row: controls laid out on one line, wrapping when narrow. */
+const settingsRow: CSSProperties = { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }
 
 /**
  * Button-press feedback ON the button itself: dim on hover, sink + darken
@@ -174,6 +176,59 @@ const pressFeedback = {
     event.currentTarget.style.transform = ''
     event.currentTarget.style.filter = ''
   },
+}
+
+/**
+ * A minimal accessible switch (role="switch" + aria-checked) in the panel's
+ * inline-style chrome. The host shell ships no switch primitive, so this
+ * reuses the plugin's own visual language (semantic tokens with fallbacks,
+ * brand blue for the on state) to match the checkbox controls around it.
+ */
+function ToggleSwitch(props: {
+  checked: boolean
+  disabled?: boolean
+  onChange: (next: boolean) => void
+  label: string
+}): ReactNode {
+  const { checked, disabled, onChange, label } = props
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={() => { onChange(!checked) }}
+      style={{
+        position: 'relative',
+        width: 34,
+        height: 18,
+        borderRadius: 999,
+        appearance: 'none',
+        border: 'none',
+        padding: 0,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        background: checked ? BRAND_BLUE : 'var(--dsw-alias-border-muted, rgba(127,127,127,0.30))',
+        transition: 'background 120ms ease',
+        opacity: disabled ? 0.55 : 1,
+        flexShrink: 0,
+        outline: 'none',
+      }}
+    >
+      <span style={{
+        position: 'absolute',
+        top: 2,
+        left: checked ? 18 : 2,
+        width: 14,
+        height: 14,
+        borderRadius: 999,
+        background: '#fff',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.25)',
+        transition: 'left 120ms ease',
+      }} />
+    </button>
+  )
 }
 
 export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
@@ -288,6 +343,9 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
         setIntervalDraft(String(next.refreshIntervalSeconds))
         setThresholdDraft(String(next.lowBalanceThreshold))
         flashNotice(d.saved)
+        // Wake live surfaces (the composer balance chip) so a toggle applies
+        // immediately instead of waiting for their next poll tick.
+        window.dispatchEvent(new CustomEvent(DSM_PREFS_CHANGED_EVENT))
       })
       .catch((error: unknown) => { setNotice({ kind: 'error', text: error instanceof Error ? error.message : String(error) }) })
       .finally(() => { setBusy(false) })
@@ -636,7 +694,26 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
       {/*  Settings  */}
       <div style={cardStyle}>
         <div style={captionRow}><span style={caption}>{d.settingsTitle}</span></div>
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+
+        {/*  Display: composer chip — title LEFT, switch RIGHT  */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--dsw-alias-fg, inherit)' }}>{d.composerChip}</span>
+          <ToggleSwitch
+            checked={prefs?.composerChipEnabled ?? true}
+            disabled={busy}
+            onChange={(next) => { updatePref({ composerChipEnabled: next }) }}
+            label={d.composerChip}
+          />
+        </div>
+        <p style={{ margin: '4px 0 0', fontSize: 11, lineHeight: 1.6, color: 'var(--dsw-alias-fg-muted, var(--dsw-alias-label-tertiary, #888))' }}>
+          {d.composerChipDesc}
+        </p>
+
+        {/*  Divider between display and data groups  */}
+        <div style={{ height: 1, background: 'var(--dsw-alias-border-muted, rgba(127,127,127,0.16))', margin: '12px 0' }} />
+
+        {/*  Data: auto-refresh + interval + low-balance alert + threshold on one line (original relative layout)  */}
+        <div style={settingsRow}>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', userSelect: 'none', ...mutedText }}>
             <input
               type="checkbox"
@@ -684,6 +761,10 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
               style={{ width: 64, border: '1px solid var(--dsw-alias-border-default, rgba(127,127,127,0.30))', borderRadius: 6, background: 'var(--dsw-alias-bg-canvas, transparent)', color: 'var(--dsw-alias-fg, inherit)', padding: '3px 6px', fontSize: 12 }}
             />
           </label>
+        </div>
+
+        {/*  Cache actions: reload + clear on one line  */}
+        <div style={{ ...settingsRow, marginTop: 10 }}>
           <button type="button" style={buttonStyle} disabled={busy} onClick={() => { cacheAction('refresh') }}>
             {d.reloadCache}
           </button>

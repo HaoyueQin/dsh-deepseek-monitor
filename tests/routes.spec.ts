@@ -96,6 +96,41 @@ describe('POST /dsm/api/prefs sanitization', () => {
       lowBalanceThreshold: 3.5,
     })
   })
+
+  it('accepts the composer-chip boolean flag and drops non-boolean values', async () => {
+    const { prefsUpdate } = await call('/dsm/api/prefs', 'POST', {
+      composerChipEnabled: false,
+      autoRefreshEnabled: 'yes',
+      lowBalanceNotify: 1,
+    })
+    expect(prefsUpdate).toHaveBeenCalledWith({ composerChipEnabled: false })
+  })
+})
+
+describe('GET /dsm/api/status composer-chip flag', () => {
+  it('reports the enabled flag from prefs', async () => {
+    const { res } = await call('/dsm/api/status')
+    const value = JSON.parse(res.body ?? '{}').value
+    expect(value.composerChipEnabled).toBe(true)
+  })
+
+  it('a legacy prefs row without the flag is reported as enabled', async () => {
+    const { services } = buildServices()
+    services.prefs = {
+      ...services.prefs,
+      get: () => ({
+        autoRefreshEnabled: true,
+        refreshIntervalSeconds: 60,
+        lowBalanceNotify: false,
+        lowBalanceThreshold: 10,
+      }) as never,
+    }
+    const route = buildMonitorRoute({} as never, 'test', services as never)
+    const req = makeReq('/dsm/api/status')
+    const res = makeRes()
+    await route.handler(req as never, res as never)
+    expect(JSON.parse(res.body ?? '{}').value.composerChipEnabled).toBe(true)
+  })
 })
 
 describe('unknown endpoints', () => {

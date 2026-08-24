@@ -5,6 +5,11 @@
 
 import type { BalanceSnapshot, ModelRouteInfo, MonitorPrefs, MonitorStatus, UsageResult } from '../wire.ts'
 
+/** Browser event fired after a prefs change lands, so live surfaces (the
+ *  composer balance chip) re-read the host cache without waiting for their
+ *  next poll tick. */
+export const DSM_PREFS_CHANGED_EVENT = 'dsh-deepseek-monitor:prefs-changed'
+
 interface ApiEnvelope<T> {
   ok: boolean
   value?: T

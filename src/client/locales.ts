@@ -34,6 +34,8 @@ export type DeepSeekMonitorKey =
   | 'secondsUnit'
   | 'lowBalanceAlert'
   | 'lowBalanceThreshold'
+  | 'composerChip'
+  | 'composerChipDesc'
   | 'clearCache'
   | 'reloadCache'
   | 'cacheCleared'
@@ -82,6 +84,8 @@ export const zh: Record<DeepSeekMonitorKey, string> = {
   secondsUnit: '秒',
   lowBalanceAlert: '低余额提醒',
   lowBalanceThreshold: '阈值',
+  composerChip: '输入框余额显示',
+  composerChipDesc: '在输入框（模型名称左侧）显示 DeepSeek 官方账户余额，仅当使用内置官方供应商时出现。',
   clearCache: '清除缓存',
   reloadCache: '重载缓存',
   cacheCleared: '缓存已清除',
@@ -131,6 +135,8 @@ export const zhTW: Record<DeepSeekMonitorKey, string> = {
   secondsUnit: '秒',
   lowBalanceAlert: '低餘額提醒',
   lowBalanceThreshold: '閾值',
+  composerChip: '輸入框餘額顯示',
+  composerChipDesc: '在輸入框（模型名稱左側）顯示 DeepSeek 官方帳戶餘額，僅在使用內建官方供應商時出現。',
   clearCache: '清除快取',
   reloadCache: '重載快取',
   cacheCleared: '快取已清除',
@@ -180,6 +186,8 @@ export const en: Record<DeepSeekMonitorKey, string> = {
   secondsUnit: 's',
   lowBalanceAlert: 'Low-balance alert',
   lowBalanceThreshold: 'Threshold',
+  composerChip: 'Composer balance',
+  composerChipDesc: 'Show the official DeepSeek account balance in the composer, left of the model name (only for the built-in official provider).',
   clearCache: 'Clear cache',
   reloadCache: 'Reload cache',
   cacheCleared: 'Cache cleared',

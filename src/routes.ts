@@ -49,7 +49,7 @@ function sanitizePrefsPatch(patch: Partial<MonitorPrefs>): Partial<MonitorPrefs>
   const out: Partial<MonitorPrefs> = {}
   for (const [key, value] of Object.entries(patch)) {
     if (!PREF_KEYS.has(key)) continue
-    if (key === 'autoRefreshEnabled' || key === 'lowBalanceNotify') {
+    if (key === 'autoRefreshEnabled' || key === 'lowBalanceNotify' || key === 'composerChipEnabled') {
       if (typeof value === 'boolean') (out as Record<string, unknown>)[key] = value
       continue
     }
@@ -109,6 +109,9 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
           balance: services.balance.peek(),
           ...(services.lowBalance() ? { lowBalance: true } : {}),
           lowBalanceThreshold: prefs.lowBalanceThreshold,
+          // Absent on old persisted rows = on; the client treats missing as
+          // enabled so an upgrade never silently hides the chip.
+          composerChipEnabled: prefs.composerChipEnabled !== false,
           ...(services.refresherError() === '' ? {} : { lastError: services.refresherError() }),
         }
         writeJson(res, { ok: true, value: status })

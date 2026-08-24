@@ -29,6 +29,12 @@ const prefsSchema = z.object({
   refreshIntervalSeconds: z.number(),
   lowBalanceNotify: z.boolean(),
   lowBalanceThreshold: z.number(),
+  // Defaulted (not required) on purpose: the domain OPEN strictly parses
+  // every stored row, so a required field here would reject prefs rows
+  // persisted by builds before this field existed (and the store would
+  // silently degrade to memory-only). .default() fills the missing key at
+  // parse time, so old rows come out enabled.
+  composerChipEnabled: z.boolean().default(true),
 })
 
 const balanceSchema = z.object({
@@ -109,6 +115,8 @@ const STORE_KEY = '__dshDeepSeekMonitorStore'
 function buildOver(tables: { prefs: () => DsmKv, cache: () => DsmKv, index: () => DsmKv }): MonitorStore {
   const readPrefs = (): MonitorPrefs => {
     const stored = tables.prefs().get('prefs') as Partial<MonitorPrefs> | undefined
+    // The schema defaults composerChipEnabled on legacy rows at parse time,
+    // so a plain spread can never clobber it with undefined.
     return stored === null || stored === undefined ? { ...DEFAULT_PREFS } : { ...DEFAULT_PREFS, ...stored }
   }
   return {

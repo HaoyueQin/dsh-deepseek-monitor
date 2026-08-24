@@ -26,12 +26,13 @@ A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring*
   - **Per-model usage rows**: fixed order Flash → Vision → Pro, full platform ids, lucide SVG icons (bolt / image / brain), per-model soft accents (sky / lavender / brand blue), progress bar + cache-hit rate + cost, constant row height
   - **Daily stacked chart**: DSM's own palette (hit green / miss orange / response purple), month navigation, sparse date labels that never collide, custom styled hover cards
   - **Platform token setup**: two acquisition channels — ① one-click console capture script (paste on the signed-in platform page, token pops up); ② manual paste via DevTools. Verified against the platform API before being stored write-only
-  - **Settings**: auto-refresh toggle & interval (≥60s), low-balance alert & threshold, reload / clear cache
+  - **Settings**: composer balance display switch, auto-refresh toggle & interval (≥60s), low-balance alert & threshold, reload / clear cache
 
 ### Composer tool-row balance item
 
 - Mounted on the official `conversation.input.right` slot — rendered **left of the model name, before the send button**, matching the sibling controls' typography (28px height / 13px font / medium weight)
-- Shown only while the session's latest route is an official DeepSeek model; hidden on the session-less hero screen
+- Shown only while the session's latest route's PROVIDER is the built-in official DeepSeek provider (the fixed first entry in Settings → Models; route id `deepseek-official`) — keyed on the provider, never the model name, so a third-party provider serving a `deepseek-*`-named model does not light it up; hidden on the session-less hero screen
+- A switch in the "Account details → Settings" card turns this composer display on / off; the composer responds immediately after saving
 - Coloring policy: the currency symbol keeps the neutral gray; the NUMBER turns green above zero (`state-success-primary`) and red at or below zero (`state-error-primary`)
 - The chip polls the host cache every 60s and the expanded panel follows the configured interval; actual upstream refreshes are driven by the auto-refresh interval above (≥60s — only the host-side timer ever calls upstream)
 

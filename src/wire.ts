@@ -24,6 +24,9 @@ export interface MonitorStatus {
   lowBalance?: boolean
   /** The configured threshold, echoed for UI hints. */
   lowBalanceThreshold?: number
+  /** Whether the composer tool-row balance chip is enabled (absent on old
+   *  builds = on). */
+  composerChipEnabled?: boolean
   /** The most recent refresher failure (omitted when ''). */
   lastError?: string
 }
@@ -34,6 +37,8 @@ export interface MonitorPrefs {
   refreshIntervalSeconds: number
   lowBalanceNotify: boolean
   lowBalanceThreshold: number
+  /** Whether the composer tool-row balance chip is shown (default on). */
+  composerChipEnabled: boolean
 }
 
 export const DEFAULT_PREFS: MonitorPrefs = {
@@ -41,6 +46,7 @@ export const DEFAULT_PREFS: MonitorPrefs = {
   refreshIntervalSeconds: 60,
   lowBalanceNotify: false,
   lowBalanceThreshold: 10,
+  composerChipEnabled: true,
 }
 
 /** One balance snapshot from the official /user/balance API (values verbatim

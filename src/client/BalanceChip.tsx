@@ -12,10 +12,12 @@
  * (`--dsw-alias-state-success-primary`) and red at or below zero
  * (`--dsw-alias-state-error-primary`).
  *
- * Display policy (all must hold): monitor service alive · session's latest
- * route is an official DeepSeek model · the locale seat is installed. The
- * hero screen (no session) renders no tool row at all, so the chip is
- * absent there by construction.
+ * Display policy (all must hold): monitor service alive · the composer
+ * chip is enabled in 账户明细 settings (default on) · the session's latest
+ * route's PROVIDER is the built-in official DeepSeek provider
+ * (`deepseek-official`) · the locale seat is installed. The hero screen
+ * (no session) renders no tool row at all, so the chip is absent there by
+ * construction.
  */
 
 import { useEffect, useState } from 'react'
@@ -23,21 +25,29 @@ import type { ReactNode } from 'react'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { en } from './locales.ts'
 import { LOCALE_NS } from './locales.ts'
-import { fetchSessionRoute, fetchStatus } from './api.ts'
+import { DSM_PREFS_CHANGED_EVENT, fetchSessionRoute, fetchStatus } from './api.ts'
 import { currencySymbol } from './balance-format.ts'
-import type { BalanceSnapshot } from '../wire.ts'
+import type { BalanceSnapshot, MonitorStatus } from '../wire.ts'
 
 export type BalanceChipProps = PropsRuntime<'conversation.input.right'> & PropsLocale<typeof LOCALE_NS>
 
 const POLL_MS = 60_000
 
-/** Whether a route names an official DeepSeek model. */
+/** The built-in official DeepSeek provider route id — the provider the
+ *  harness's `llm-deepseek` adapter registers (设置→模型's fixed first
+ *  entry). The balance snapshot is a fact of THIS account and no other, so
+ *  the gate keys on the provider id and never on a model name: a third-party
+ *  provider may serve a model literally named `deepseek-*` and must not
+ *  light up the official balance. */
+export const OFFICIAL_DEEPSEEK_PROVIDER = 'deepseek-official'
+
+/** Whether a route's PROVIDER is the built-in official DeepSeek provider.
+ *  The model name is deliberately ignored — the balance belongs to the
+ *  provider, and a deepseek-named model behind any other provider shares
+ *  nothing with the official account. */
 export function isOfficialDeepSeek(route: { provider: string, model: string } | null | undefined): boolean {
   if (route === undefined || route === null) return false
-  return route.model.toLowerCase().startsWith('deepseek')
-    || route.provider === 'deepseek'
-    || route.provider === 'deepseek-official'
-    || route.provider === 'llm-deepseek'
+  return route.provider === OFFICIAL_DEEPSEEK_PROVIDER
 }
 
 /** Parse the verbatim upstream amount string; null when it is not a finite
@@ -60,9 +70,25 @@ const TONE_COLOR: Record<'positive' | 'nonpositive' | 'neutral', string> = {
   neutral: 'var(--dsw-alias-label-secondary)',
 }
 
+/** The chip's display gates, kept pure for unit tests: service alive · the
+ *  composer chip enabled (absent = on, so an upgrade never silently hides
+ *  it) · the session's route is the built-in official provider. */
+export interface ChipGateInput {
+  alive: boolean | null
+  composerChipEnabled: boolean | undefined
+  route: { provider: string, model: string } | null | undefined
+}
+
+export function shouldRenderChip(input: ChipGateInput): boolean {
+  return input.alive === true
+    && input.composerChipEnabled !== false
+    && isOfficialDeepSeek(input.route)
+}
+
 export function BalanceChip(props: BalanceChipProps): ReactNode {
   const t = props.t as ((key: keyof typeof en) => string) | undefined
   const [alive, setAlive] = useState<boolean | null>(null)
+  const [chipEnabled, setChipEnabled] = useState<boolean | undefined>(undefined)
   const [balance, setBalance] = useState<BalanceSnapshot | null>(null)
   const [route, setRoute] = useState<{ provider: string, model: string } | null>(null)
 
@@ -71,7 +97,12 @@ export function BalanceChip(props: BalanceChipProps): ReactNode {
     const sessionId = props.sessionId === undefined ? undefined : String(props.sessionId)
     const poll = (): void => {
       void fetchStatus()
-        .then((value) => { if (!disposed) { setBalance(value.balance); setAlive(true) } })
+        .then((value: MonitorStatus) => {
+          if (disposed) return
+          setBalance(value.balance)
+          setChipEnabled(value.composerChipEnabled)
+          setAlive(true)
+        })
         .catch(() => { if (!disposed) setAlive(false) })
       if (sessionId !== undefined) {
         void fetchSessionRoute(sessionId)
@@ -79,12 +110,21 @@ export function BalanceChip(props: BalanceChipProps): ReactNode {
           .catch(() => { if (!disposed) setRoute(null) })
       }
     }
+    // A 账户明细 settings change dispatches this event; re-poll right away so
+    // the toggle takes effect on the composer chip without waiting for the
+    // next 60s tick.
+    const onPrefsChanged = (): void => poll()
     poll()
     const timer = window.setInterval(poll, POLL_MS)
-    return () => { disposed = true; window.clearInterval(timer) }
+    window.addEventListener(DSM_PREFS_CHANGED_EVENT, onPrefsChanged)
+    return () => {
+      disposed = true
+      window.clearInterval(timer)
+      window.removeEventListener(DSM_PREFS_CHANGED_EVENT, onPrefsChanged)
+    }
   }, [props.sessionId])
 
-  if (alive !== true || !isOfficialDeepSeek(route) || t === undefined) return null
+  if (!shouldRenderChip({ alive, composerChipEnabled: chipEnabled, route }) || t === undefined) return null
 
   const amount = balance === null ? null : parseAmount(balance.totalBalance)
   const tone = amountTone(amount)
