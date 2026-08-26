@@ -162,15 +162,21 @@ export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
   ctx.effect(() => {
     // A rejected flag must never surface as an unhandled rejection — that is
     // the exact failure mode that took the host down (exit 1, 2026-08-22).
+    // The gate ALSO covers a fiber unload settling the flag AFTER the disposer
+    // ran: without it, refresher.start() would flip disposed back to false and
+    // re-arm a timer on an already-unloaded fiber (leak on HMR/re-inject).
+    let active = true
+    const startRefresher = (): void => { if (active) refresher.start() }
     void tokenFlag()
-      .then(() => { refresher.start() })
+      .then(startRefresher)
       .catch((cause: unknown) => {
         const logger = (ctx as unknown as { logger?: { warn(message: unknown): void } }).logger
         logger?.warn(cause instanceof Error ? cause : new Error(String(cause)))
-        refresher.start()
+        startRefresher()
       })
     const dispose = ctx.webServer.register(buildMonitorRoute(ctx, config.version ?? PLUGIN_VERSION, services) as never)
     return () => {
+      active = false
       refresher.dispose()
       dispose()
     }
