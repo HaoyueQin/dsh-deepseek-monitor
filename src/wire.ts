@@ -134,14 +134,29 @@ const MAX_JSON_BODY_BYTES = 64 * 1024
 async function readBodyText(req: DsmHttpRequest, maxBytes: number): Promise<string> {
   const chunks: Uint8Array[] = []
   let bytes = 0
-  for await (const chunk of req) {
-    const encoded = typeof chunk === 'string' ? textEncoder.encode(chunk) : chunk
-    bytes += encoded.byteLength
-    if (bytes > maxBytes) {
-      throw new DsmError(413, `request body exceeds ${maxBytes} bytes`)
+  let tooLarge = false
+  try {
+    for await (const chunk of req) {
+      const encoded = typeof chunk === 'string' ? textEncoder.encode(chunk) : chunk
+      bytes += encoded.byteLength
+      if (tooLarge) continue // drain without buffering
+      if (bytes > maxBytes) {
+        // The cap decided: drop the buffer, KEEP CONSUMING. Throwing here
+        // would leave the rest of the request body unread in the socket, and
+        // Node would parse those bytes as the NEXT request (keep-alive frame
+        // corruption). The caller answers 413 after the drain, so the client
+        // can reuse the connection.
+        tooLarge = true
+        chunks.length = 0
+        continue
+      }
+      chunks.push(encoded)
     }
-    chunks.push(encoded)
+  } catch (cause) {
+    // A transport error mid-drain must not mask the 413 the cap promised.
+    if (!tooLarge) throw cause
   }
+  if (tooLarge) throw new DsmError(413, `request body exceeds ${maxBytes} bytes`)
   const decoder = new TextDecoder()
   let body = ''
   for (const chunk of chunks) body += decoder.decode(chunk, { stream: true })

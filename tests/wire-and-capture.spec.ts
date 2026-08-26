@@ -24,6 +24,20 @@ describe('readJsonBody byte cap', () => {
     expect(await readJsonBody(reqWithChunks([]))).toBeUndefined()
   })
 
+  it('drains an oversized body to the end before answering 413', async () => {
+    // The 413 decision must not abandon the stream: an interrupted read leaves
+    // unparsed bytes in the socket that Node would treat as the next request.
+    let consumed = 0
+    const req = {
+      headers: {},
+      [Symbol.asyncIterator]: async function* () {
+        for (let i = 0; i < 100; i++) { consumed++; yield '你'.repeat(1000) }
+      },
+    }
+    await expect(readJsonBody(req as any)).rejects.toMatchObject({ status: 413 })
+    expect(consumed).toBe(100)
+  })
+
   it('rejects malformed JSON with 400', async () => {
     await expect(readJsonBody(reqWithChunks(['{oops']))).rejects.toMatchObject({ status: 400 })
   })
