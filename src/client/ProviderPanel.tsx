@@ -295,13 +295,25 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const year = target.getFullYear()
   const month = target.getMonth() + 1
 
+  // Monotonic request sequence: a slow response from an earlier month must
+  // never overwrite a newer month's data (double-clicking ‹ with the platform
+  // API in the hundreds of ms range could otherwise show 8月 data under a
+  // 7月 heading).
+  // (中文注记保持原样：该竞态已由 seq 守卫解决)
+  const usageSeqRef = useRef(0)
   useEffect(() => {
     if ((status?.platformToken.configured ?? false) !== true) return
+    const seq = ++usageSeqRef.current
     let disposed = false
     setUsageError('')
     void fetchUsage(year, month)
-      .then((value) => { if (!disposed) setUsage(value) })
-      .catch((error: unknown) => { if (!disposed) { setUsage(null); setUsageError(error instanceof Error ? error.message : String(error)) } })
+      .then((value) => { if (!disposed && seq === usageSeqRef.current) setUsage(value) })
+      .catch((error: unknown) => {
+        if (!disposed && seq === usageSeqRef.current) {
+          setUsage(null)
+          setUsageError(error instanceof Error ? error.message : String(error))
+        }
+      })
     return () => { disposed = true }
   }, [year, month, status?.platformToken.configured])
 
@@ -381,7 +393,10 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
     .filter(m => !LEGACY_MODELS.has(m.name) && !LEGACY_MODELS.has(m.key))
     .sort((a, b) => (ROW_ORDER.get(a.key) ?? 99) - (ROW_ORDER.get(b.key) ?? 99) || a.name.localeCompare(b.name))
   const maxTokens = Math.max(...rowModels.map(m => m.totalTokens), 1)
-  const today = usage?.days.find(day => day.date === todayStr()) ?? null
+  // 「今日消耗」 only exists for the current month: a historical month has no
+  // row for today, and showing ¥0.00 under that label would read as "spent
+  // nothing today". The mini-card is hidden below instead.
+  const today = monthOffset === 0 ? usage?.days.find(day => day.date === todayStr()) ?? null : null
   const monthTotal = usage?.days.reduce((sum, day) => sum + day.totalTokens, 0) ?? 0
 
   // Chart points (DSM UsageChart fold): hit/miss/response summed across ALL
@@ -487,11 +502,15 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
                 </div>
                 {balance !== null
                   ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-                        <div style={{ border: '1px solid var(--dsw-alias-border-muted, rgba(127,127,127,0.18))', borderRadius: 8, padding: '6px 10px' }}>
-                          <div style={mutedText}>{d.todayCost}</div>
-                          <div style={{ fontWeight: 600 }}>{today !== null ? fmtMoney(today.totalCost, costSymbol) : `${costSymbol}0.00`}</div>
-                        </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: monthOffset === 0 ? '1fr 1fr' : '1fr', gap: 8, marginTop: 8 }}>
+                        {monthOffset === 0
+                          ? (
+                              <div style={{ border: '1px solid var(--dsw-alias-border-muted, rgba(127,127,127,0.18))', borderRadius: 8, padding: '6px 10px' }}>
+                                <div style={mutedText}>{d.todayCost}</div>
+                                <div style={{ fontWeight: 600 }}>{today !== null ? fmtMoney(today.totalCost, costSymbol) : `${costSymbol}0.00`}</div>
+                              </div>
+                            )
+                          : null}
                         <div style={{ border: '1px solid var(--dsw-alias-border-muted, rgba(127,127,127,0.18))', borderRadius: 8, padding: '6px 10px' }}>
                           <div style={mutedText}>{d.monthCostLabel}</div>
                           <div style={{ fontWeight: 600 }}>{usage !== null ? fmtMoney(usage.monthCost, costSymbol) : '—'}</div>
