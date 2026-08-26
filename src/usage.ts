@@ -37,6 +37,17 @@ interface CostResponse {
   data?: { biz_data?: Array<{ total?: UsageModelBlock[], days?: Array<{ date?: string, data?: UsageModelBlock[] }> }> }
 }
 
+/**
+ * Strict amount parsing, mirroring upstream parse::<f64>().unwrap_or(0.0):
+ * the WHOLE string must be a finite number ('12abc' is 0, not 12). Falls back
+ * to 0 for absent amounts so a missing field costs nothing.
+ */
+function parseAmountStrict(raw: string | undefined): number {
+  if (raw === undefined) return 0
+  const value = Number(raw.trim())
+  return Number.isFinite(value) ? value : 0
+}
+
 /** Sum a usage block into (total, request, hit, miss, response) — DSM token_breakdown. */
 export function tokenBreakdown(usage: UsageEntry[]): { total: number, request: number, hit: number, miss: number, response: number } {
   let total = 0
@@ -45,7 +56,10 @@ export function tokenBreakdown(usage: UsageEntry[]): { total: number, request: n
   let miss = 0
   let response = 0
   for (const entry of usage) {
-    const value = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Number.parseFloat(entry.amount ?? '') || 0))
+    // Upstream rounds EACH entry (clamp then round) and sums the rounded
+    // values; a sum-then-round port would drift by up to N/2 on fractional
+    // amounts. The per-entry value is an integer, so totals sum exactly.
+    const value = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.round(parseAmountStrict(entry.amount))))
     switch (entry.type) {
       case 'REQUEST':
         request = value
@@ -69,14 +83,15 @@ export function tokenBreakdown(usage: UsageEntry[]): { total: number, request: n
         break
     }
   }
-  return { total: Math.round(total), request: Math.round(request), hit: Math.round(hit), miss: Math.round(miss), response: Math.round(response) }
+  // Per-entry integers sum exactly — the old sum-then-round is gone.
+  return { total, request, hit, miss, response }
 }
 
 /** Monetary sum of a usage block excluding REQUEST entries — DSM cost_sum. */
 export function costSum(usage: UsageEntry[]): number {
   return usage
     .filter(entry => entry.type !== 'REQUEST')
-    .reduce((sum, entry) => sum + (Number.parseFloat(entry.amount ?? '') || 0), 0)
+    .reduce((sum, entry) => sum + parseAmountStrict(entry.amount), 0)
 }
 
 export interface UsageDeps {
