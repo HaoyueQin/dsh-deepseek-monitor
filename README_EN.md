@@ -9,7 +9,7 @@ English | [简体中文](./README.md)
 [![dsh plugin · web](https://img.shields.io/badge/dsh--plugin-web-4D6BFE)](https://github.com/DeepSeek-ai/DeepSeek-Harness)
 [![node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
-A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring** of [DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) into dsh — embedded in the "Settings → Models → DeepSeek" provider card, with a live balance item in the composer tool row (left of the model name).
+A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring** of [DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) into dsh — embedded in the "Settings → Models → DeepSeek" provider card, with a live balance item in the composer tool row (left of the model name).
 
 ![Account details panel preview](docs/images/account-details-panel.png)
 

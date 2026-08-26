@@ -9,7 +9,7 @@
 [![dsh plugin · web](https://img.shields.io/badge/dsh--plugin-web-4D6BFE)](https://github.com/DeepSeek-ai/DeepSeek-Harness)
 [![node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 
-DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) 的**余额与用量监控**能力移植进 dsh —— 集成到「设置 → 模型 → DeepSeek」供应商卡片内，并在输入框工具行（模型名称左侧）显示实时余额。
+DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) 的**余额与用量监控**能力移植进 dsh —— 集成到「设置 → 模型 → DeepSeek」供应商卡片内，并在输入框工具行（模型名称左侧）显示实时余额。
 
 ![账户明细面板预览](docs/images/account-details-panel.png)
 
