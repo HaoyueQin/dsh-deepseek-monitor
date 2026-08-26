@@ -4,7 +4,6 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPlatformTokenService, verifyUsageToken } from '../src/platform-token.ts'
-import { DsmError } from '../src/wire.ts'
 
 const jsonResponse = (payload: unknown, status = 200): Response =>
   new Response(JSON.stringify(payload), { status, headers: { 'content-type': 'application/json' } })
@@ -81,6 +80,3 @@ describe('createPlatformTokenService', () => {
     expect(JSON.stringify(await service.describe())).not.toContain('tok')
   })
 })
-
-// Keep DsmError pinned: the status codes above are the wire contract.
-void DsmError

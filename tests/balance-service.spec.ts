@@ -5,7 +5,6 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createBalanceService } from '../src/balance.ts'
-import { DsmError } from '../src/wire.ts'
 
 const OK_BODY = {
   is_available: true,
@@ -131,6 +130,3 @@ describe('createBalanceService', () => {
     expect(credentials.resolve).toHaveBeenCalledWith('MY_DS_KEY')
   })
 })
-
-// DsmError is imported to keep the wire contract pinned in this suite.
-void DsmError

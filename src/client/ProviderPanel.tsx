@@ -299,7 +299,6 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   // never overwrite a newer month's data (double-clicking ‹ with the platform
   // API in the hundreds of ms range could otherwise show 8月 data under a
   // 7月 heading).
-  // (中文注记保持原样：该竞态已由 seq 守卫解决)
   const usageSeqRef = useRef(0)
   useEffect(() => {
     if ((status?.platformToken.configured ?? false) !== true) return

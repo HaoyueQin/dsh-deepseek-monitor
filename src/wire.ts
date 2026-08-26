@@ -118,12 +118,6 @@ export interface UsageResult {
 
 const textEncoder = new TextEncoder()
 
-/** Wire bytes of one body chunk. Strings count UTF-8 BYTES — .length would
- *  under-count multi-byte content up to 3x and let an oversized CJK body
- *  slip past the cap. */
-const byteLength = (chunk: string | Uint8Array): number =>
-  typeof chunk === 'string' ? textEncoder.encode(chunk).length : chunk.byteLength
-
 /** Default cap for a JSON request body; bounds only a misbehaving trusted client. */
 const MAX_JSON_BODY_BYTES = 64 * 1024
 
@@ -137,9 +131,10 @@ async function readBodyText(req: DsmHttpRequest, maxBytes: number): Promise<stri
   let tooLarge = false
   try {
     for await (const chunk of req) {
+      // Draining discards the rest without encoding or counting it.
+      if (tooLarge) continue
       const encoded = typeof chunk === 'string' ? textEncoder.encode(chunk) : chunk
       bytes += encoded.byteLength
-      if (tooLarge) continue // drain without buffering
       if (bytes > maxBytes) {
         // The cap decided: drop the buffer, KEEP CONSUMING. Throwing here
         // would leave the rest of the request body unread in the socket, and

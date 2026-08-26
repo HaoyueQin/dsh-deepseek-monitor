@@ -16,7 +16,7 @@
 
 import { defineDomain, domainTable } from '@deepseek-ai/dsh-storage-domain'
 import { z } from 'zod'
-import type { Context, DsmDomain, DsmKv } from './context-types.ts'
+import type { Context, DsmKv } from './context-types.ts'
 import { DEFAULT_PREFS, type BalanceSnapshot, type MonitorPrefs, type UsageResult } from './wire.ts'
 
 // ── Domain definition ──────────────────────────────────────────────────────
