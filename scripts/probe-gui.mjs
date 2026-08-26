@@ -14,9 +14,10 @@
 import { createRequire } from 'node:module'
 import process from 'node:process'
 
-const UPANEL = 'D:/Project/dsh-usage-statistics-panel'
-const req = createRequire(`${UPANEL}/package.json`)
-const { chromium } = req('playwright-core')
+// playwright-core is a devDependency of THIS package; no borrowing from
+// sibling repositories (the old cross-repo createRequire broke on machines
+// that never cloned dsh-usage-statistics-panel).
+const { chromium } = createRequire(import.meta.url)('playwright-core')
 
 const URL = process.env.DSH_URL ?? 'http://127.0.0.1:3080'
 
