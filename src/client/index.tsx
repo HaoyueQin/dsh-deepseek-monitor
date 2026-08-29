@@ -5,16 +5,56 @@
  * 用量 button + expandable panel inside 设置→模型→DeepSeek).
  * No standalone settings section by design — monitoring lives in the row.
  */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
-// Type-only: pulls the conversation SlotMap merge ('conversation.input.right').
-import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
-// Type-only: pulls ctx.locale into this program.
-import type {} from '@deepseek-ai/dsh-client-locale/client'
+// Cross-version client context (structural mirror, same discipline as the host
+// half's context-types.ts): `@deepseek-ai/dsh-client-runtime` — the 0.1.1-rc.2 home
+// of ClientContext, the `slots` service and the SessionStandardProps sessionId
+// merge — is retired in dsh 0.1.2-alpha.1 (ClientContext is now just the cordis
+// Context; `slots` moved to dsh-client-ui-renderer; the sessionId merge moved into
+// ui-conversation/ui-chat/ui-session). No upstream type-graph address spans both
+// kernels, so the small faces this plugin touches are mirrored here; register/
+// inject signatures were cross-checked against 0.1.1-rc.2 and 0.1.2-alpha.1 sources
+// and are identical.
+import type { Context } from '@deepseek-ai/cordis'
 import { BalanceChip } from './BalanceChip.tsx'
 import { setupAugment } from './augment.tsx'
 import { LOCALE_NS, en, zh, zhTW, type DeepSeekMonitorKey } from './locales.ts'
 
+/** Client-half context alias (the type is the cordis Context on both kernels). */
+type ClientContext = Context
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    /** Slot registry service (runtime on 0.1.1-rc.2, ui-renderer on 0.1.2-alpha.1). */
+    slots: {
+      inject(key: string, callback: () => (() => void) | void): () => void
+      register(options: {
+        name: string
+        id?: string
+        order?: number
+        locale?: string
+      }, component: unknown): () => void
+    }
+    /** Browser locale registry (same face on both kernels). */
+    locale: {
+      register(ns: string, locale: string, dict: Record<string, string>): () => void
+    }
+  }
+}
+
 declare module '@deepseek-ai/dsh-client-ui-slots' {
+  interface SlotMap {
+    /** Structural mirror of ui-conversation's declaration — identical on
+     *  0.1.1-rc.2 and 0.1.2-alpha.1 (kind list / scope session / owner InputZone). */
+    'conversation.input.right': {
+      kind: 'list'
+      scope: 'session'
+      owner: object
+    }
+  }
+  interface SessionStandardProps {
+    /** Framework-resolved current session id (mirror of the runtime/upstream merge). */
+    sessionId: string
+  }
   interface LocaleNamespaceMap {
     'deepseekMonitor': DeepSeekMonitorKey
   }
