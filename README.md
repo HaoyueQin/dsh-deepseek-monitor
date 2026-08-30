@@ -2,6 +2,13 @@
 
 [English](./README_EN.md) | 简体中文
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/banner-zh-dark.svg">
+    <img src="docs/banner-zh.svg" alt="DSH DeepSeek Monitor" width="720">
+  </picture>
+</p>
+
 [![npm version](https://img.shields.io/npm/v/dsh-deepseek-monitor)](https://www.npmjs.com/package/dsh-deepseek-monitor)
 [![npm downloads](https://img.shields.io/npm/dm/dsh-deepseek-monitor)](https://www.npmjs.com/package/dsh-deepseek-monitor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -13,7 +20,13 @@
 
 DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) 的**余额与用量监控**能力移植进 dsh —— 集成到「设置 → 模型 → DeepSeek」供应商卡片内，并在输入框工具行（模型名称左侧）显示实时余额。
 
-![账户明细面板预览](docs/images/account-details-panel.png)
+<p align="center">
+  <img src="docs/demo-zh.svg" alt="demo" width="720">
+</p>
+
+<p align="center">
+  <img src="docs/images/account-details-panel.png" alt="账户明细面板预览" width="720">
+</p>
 
 > 截图：设置 → 模型 → DeepSeek 卡片展开的「账户明细」面板（余额卡 / 模型用量行 / 每日堆叠柱状图），以及名称旁的余额 chip 与「账户明细」按钮。
 

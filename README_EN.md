@@ -2,6 +2,13 @@
 
 English | [简体中文](./README.md)
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
+    <img src="docs/banner.svg" alt="DSH DeepSeek Monitor" width="720">
+  </picture>
+</p>
+
 [![npm version](https://img.shields.io/npm/v/dsh-deepseek-monitor)](https://www.npmjs.com/package/dsh-deepseek-monitor)
 [![npm downloads](https://img.shields.io/npm/dm/dsh-deepseek-monitor)](https://www.npmjs.com/package/dsh-deepseek-monitor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -13,7 +20,13 @@ English | [简体中文](./README.md)
 
 A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring** of [DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) into dsh — embedded in the "Settings → Models → DeepSeek" provider card, with a live balance item in the composer tool row (left of the model name).
 
-![Account details panel preview](docs/images/account-details-panel.png)
+<p align="center">
+  <img src="docs/demo.svg" alt="demo" width="720">
+</p>
+
+<p align="center">
+  <img src="docs/images/account-details-panel.png" alt="Account details panel preview" width="720">
+</p>
 
 > Screenshot: the "Account details" panel expanded inside the DeepSeek provider card (balance card / per-model usage rows / daily stacked chart), plus the balance chip and the "Account details" button next to the row name.
 
