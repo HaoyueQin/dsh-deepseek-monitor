@@ -8,6 +8,8 @@ English | [简体中文](./README.md)
 [![TypeScript 5.6](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![dsh plugin · web](https://img.shields.io/badge/dsh--plugin-web-4D6BFE)](https://github.com/DeepSeek-ai/DeepSeek-Harness)
 [![node >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Commit activity](https://img.shields.io/github/commit-activity/t/HaoyueQin/dsh-deepseek-monitor)](https://github.com/HaoyueQin/dsh-deepseek-monitor/graphs/commit-activity)
+[![Last commit](https://img.shields.io/github/last-commit/HaoyueQin/dsh-deepseek-monitor)](https://github.com/HaoyueQin/dsh-deepseek-monitor/commits)
 
 A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring** of [DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) into dsh — embedded in the "Settings → Models → DeepSeek" provider card, with a live balance item in the composer tool row (left of the model name).
 
@@ -76,6 +78,10 @@ The balance / platform-usage backend and the dashboard structure were ported fro
 | [lucide](https://lucide.dev/) | SVG icon library | ISC |
 
 Released under [MIT](./LICENSE); the MIT notices of the projects above are preserved with any distribution.
+
+## Activity
+
+[![HaoyueQin/dsh-deepseek-monitor GitStock K-Line Chart](https://gitstock.org/HaoyueQin/dsh-deepseek-monitor/stock.svg)](https://gitstock.org/HaoyueQin/dsh-deepseek-monitor)
 
 ## License
 
