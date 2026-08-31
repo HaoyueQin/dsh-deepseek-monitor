@@ -305,6 +305,10 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
     const seq = ++usageSeqRef.current
     let disposed = false
     setUsageError('')
+    // Drop the previous month's data immediately: a slow response for the new
+    // month must not leave the old month's bars under the new heading (the
+    // seq guard above already prevents the reverse corruption).
+    setUsage(null)
     void fetchUsage(year, month)
       .then((value) => { if (!disposed && seq === usageSeqRef.current) setUsage(value) })
       .catch((error: unknown) => {
@@ -387,14 +391,18 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   // Display order is fixed: Flash → Flash Vision → Pro → anything else.
   const LEGACY_MODELS = new Set(['deepseek-chat', 'deepseek-reasoner', 'deepseek-chat & deepseek-reasoner'])
   const ROW_ORDER = new Map([['flash', 0], ['flash-vision', 1], ['pro', 2]])
+  /** History-depth guard: the host routes reject year < 2020, so cap the
+   *  back-step at 5 years (60 months) — the ‹ button disables there. */
+  const MAX_MONTH_OFFSET = 60
   const allModels = usage?.models ?? []
   const rowModels: UsageModelSummary[] = allModels
     .filter(m => !LEGACY_MODELS.has(m.name) && !LEGACY_MODELS.has(m.key))
     .sort((a, b) => (ROW_ORDER.get(a.key) ?? 99) - (ROW_ORDER.get(b.key) ?? 99) || a.name.localeCompare(b.name))
   const maxTokens = Math.max(...rowModels.map(m => m.totalTokens), 1)
-  // 「今日消耗」 only exists for the current month: a historical month has no
-  // row for today, and showing ¥0.00 under that label would read as "spent
-  // nothing today". The mini-card is hidden below instead.
+  // 「今日消耗」 only exists for the current month: the mini-card renders only
+  // at monthOffset === 0, and when the platform serves no row for today the
+  // card shows ¥0.00 — today's spend, not month-to-date, so an absent row
+  // honestly reads as "nothing recorded today".
   const today = monthOffset === 0 ? usage?.days.find(day => day.date === todayStr()) ?? null : null
   const monthTotal = usage?.days.reduce((sum, day) => sum + day.totalTokens, 0) ?? 0
 
@@ -547,7 +555,7 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
         <div style={captionRow}>
           <span style={caption}>{d.monthUsage}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <button type="button" style={navButton} {...pressFeedback} onClick={() => { setMonthOffset(o => o + 1) }}>‹</button>
+            <button type="button" style={navButton} {...pressFeedback} disabled={monthOffset >= MAX_MONTH_OFFSET} onClick={() => { setMonthOffset(o => Math.min(MAX_MONTH_OFFSET, o + 1)) }}>‹</button>
             <span style={{ fontSize: 12, fontWeight: 600, minWidth: 58, textAlign: 'center' }}>{`${year}-${String(month).padStart(2, '0')}`}</span>
             <button type="button" style={navButton} {...pressFeedback} disabled={monthOffset <= 0} onClick={() => { setMonthOffset(o => Math.max(0, o - 1)) }}>›</button>
           </span>
