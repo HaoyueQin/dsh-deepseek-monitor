@@ -189,13 +189,12 @@ export function buildMonitorRoute(ctx: Context, version: string, services: Monit
       }
       throw new DsmError(404, `unknown endpoint ${method} ${rawUrl}`)
     } catch (err) {
-      const logger = (ctx as unknown as { logger?: { warn(message: unknown): void } }).logger
       // Only authored DsmError messages are client- and log-visible. Every
       // path that handles a credential value (routes /token, balance, usage)
       // raises DsmError exclusively, so this branch never sees one; keep it
       // that way — an Error message is logged verbatim here and must never
       // carry an API key or a platform token.
-      if (!(err instanceof DsmError)) logger?.warn(err instanceof Error ? err : new Error(String(err)))
+      if (!(err instanceof DsmError)) ctx.logger.warn(err instanceof Error ? err : new Error(String(err)))
       writeError(res, err)
     }
   }

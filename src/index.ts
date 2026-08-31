@@ -32,8 +32,7 @@ export interface DeepSeekMonitorConfig {
 }
 
 export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
-  const logger = (ctx as unknown as { logger?: { warn(message: unknown): void } }).logger
-  const store = sharedStore(ctx.storageDomain, (message) => logger?.warn(new Error(message)))
+  const store = sharedStore(ctx.storageDomain, (message) => ctx.logger.warn(new Error(message)))
   const balance = createBalanceService({ credentials: ctx.credentials, ...(config.keyRef === undefined ? {} : { keyRef: config.keyRef }) })
   const usage = createUsageService({ credentials: ctx.credentials })
   const platformToken = createPlatformTokenService({ credentials: ctx.credentials })
@@ -171,8 +170,7 @@ export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
     void tokenFlag()
       .then(startRefresher)
       .catch((cause: unknown) => {
-        const logger = (ctx as unknown as { logger?: { warn(message: unknown): void } }).logger
-        logger?.warn(cause instanceof Error ? cause : new Error(String(cause)))
+        ctx.logger.warn(cause instanceof Error ? cause : new Error(String(cause)))
         startRefresher()
       })
     const dispose = ctx.webServer.register(buildMonitorRoute(ctx, config.version ?? PLUGIN_VERSION, services) as never)
