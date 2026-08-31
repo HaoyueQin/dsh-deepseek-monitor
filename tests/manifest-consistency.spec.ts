@@ -13,6 +13,9 @@ const pkg = JSON.parse(read('package.json')) as {
   name: string
   main: string
   files: string[]
+  exports: Record<string, { default?: string } | string | undefined>
+  dsh?: { bundle?: { patch?: string }, client?: { platform?: string, inject?: string[] } }
+  peerDependencies?: Record<string, string | undefined>
 }
 const manifest = JSON.parse(read('dsh.plugin.json')) as {
   id: string
@@ -45,6 +48,34 @@ describe('manifest consistency', () => {
     expect(files).toContain('dsh.plugin.json')
     expect(files).toContain('cordis.patch.yml')
     expect(pkg.main).toBe('lib/index.js')
+  })
+
+  it('keeps the alpha.1+ client assembly channel coherent (dsh.client / exports)', () => {
+    // Since 0.1.2-alpha.1 the client-modules entry resolves package.json
+    // dsh.client + exports["./client"] — dsh.plugin.json took no part.
+    expect(pkg.dsh?.client?.platform).toBe('web')
+    expect(pkg.dsh?.bundle?.patch).toBe('./cordis.patch.yml')
+    expect(pkg.exports?.['./client']).toMatchObject({ default: './lib/client.js' })
+    const inject = pkg.dsh?.client?.inject ?? []
+    // dsh-client-runtime is retired since alpha.1 (slots moved to ui-renderer).
+    expect(inject).not.toContain('@deepseek-ai/dsh-client-runtime')
+    expect(inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
+  })
+
+  it('keeps peer ranges covering rc.1 through alpha.2 (node-semver pre-release rule)', () => {
+    // A single ">=0.1.1-rc.1 <0.2.0" style range rejects pre-release
+    // candidates without a same-tuple comparator; the dual range below is the
+    // verified cover for each supported kernel generation.
+    const PEER_RANGE = '^0.1.1-rc.1 || ^0.1.2-alpha.1'
+    const names = [
+      '@deepseek-ai/dsh-client-locale',
+      '@deepseek-ai/dsh-client-ui-conversation',
+      '@deepseek-ai/dsh-client-ui-renderer',
+      '@deepseek-ai/dsh-client-ui-settings',
+      '@deepseek-ai/dsh-client-ui-slots',
+      '@deepseek-ai/dsh-storage-domain',
+    ]
+    for (const name of names) expect(pkg.peerDependencies?.[name]).toBe(PEER_RANGE)
   })
 
   it('the manifest description never re-advertises a retired surface', () => {
