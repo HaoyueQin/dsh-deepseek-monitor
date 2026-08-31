@@ -32,7 +32,8 @@ export interface DeepSeekMonitorConfig {
 }
 
 export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
-  const store = sharedStore(ctx.storageDomain)
+  const logger = (ctx as unknown as { logger?: { warn(message: unknown): void } }).logger
+  const store = sharedStore(ctx.storageDomain, (message) => logger?.warn(new Error(message)))
   const balance = createBalanceService({ credentials: ctx.credentials, ...(config.keyRef === undefined ? {} : { keyRef: config.keyRef }) })
   const usage = createUsageService({ credentials: ctx.credentials })
   const platformToken = createPlatformTokenService({ credentials: ctx.credentials })

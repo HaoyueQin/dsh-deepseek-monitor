@@ -56,6 +56,8 @@ export function createBalanceService(deps: BalanceDeps): {
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
     } catch (cause) {
+      // cause comes from fetch/AbortSignal only (network/timeout) — the API
+      // key never enters an Error message on this path.
       throw new DsmError(502, `网络请求失败：${cause instanceof Error ? cause.message : String(cause)}`)
     }
     if (response.status === 401) throw new DsmError(401, 'API Key 无效或已过期')

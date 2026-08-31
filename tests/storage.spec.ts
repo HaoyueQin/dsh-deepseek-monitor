@@ -113,6 +113,20 @@ describe('domain swap migration', () => {
   })
 })
 
+describe('degrade callback', () => {
+  it('reports a domain open failure and keeps serving from memory', async () => {
+    const onDegrade = vi.fn()
+    const failing = { open: async () => { throw new Error('backend down') } }
+    const store = sharedStore(failing as never, onDegrade)
+    await store.setPrefs({ refreshIntervalSeconds: 90 })
+    await vi.waitFor(() => { expect(onDegrade).toHaveBeenCalledTimes(1) })
+    expect(String(onDegrade.mock.calls[0]?.[0])).toContain('backend down')
+    // Memory mode keeps serving after the degrade.
+    await store.setBalance(snap())
+    expect(store.getBalance()?.totalBalance).toBe('5.00')
+  })
+})
+
 describe('cache-index write serialization', () => {
   it('never loses a month key when concurrent writes and clearCache interleave', async () => {
     _resetSharedStoreForTests()

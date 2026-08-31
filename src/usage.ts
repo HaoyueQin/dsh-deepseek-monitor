@@ -106,6 +106,8 @@ async function getJson<T>(url: string, token: string): Promise<T> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
   } catch (cause) {
+    // cause comes from fetch/AbortSignal only (network/timeout) — the token
+    // value never enters an Error message on this path.
     throw new DsmError(502, `用量请求失败：${cause instanceof Error ? cause.message : String(cause)}`)
   }
   if (response.status === 401) throw new DsmError(401, '平台 Token 无效或已过期，请重新配置')
@@ -125,8 +127,14 @@ export function createUsageService(deps: UsageDeps): {
     async fetch(year: number, month: number): Promise<UsageResult> {
       const resolved = await deps.credentials.resolve(PLATFORM_TOKEN_REF)
       if (resolved === undefined) throw new DsmError(409, '尚未配置平台用量 Token')
-      const amount = await getJson<AmountResponse>(`${USAGE_AMOUNT_URL}?month=${month}&year=${year}`, resolved.value)
-      const cost = await getJson<CostResponse>(`${COST_URL}?month=${month}&year=${year}`, resolved.value)
+      // Both endpoints are required for one month fold; fire them in parallel
+      // so a month load costs one RTT, not two. Rejection keeps the sequential
+      // semantics: the first failure (401/429/502, same DsmError surface)
+      // fails the month fetch as a whole.
+      const [amount, cost] = await Promise.all([
+        getJson<AmountResponse>(`${USAGE_AMOUNT_URL}?month=${month}&year=${year}`, resolved.value),
+        getJson<CostResponse>(`${COST_URL}?month=${month}&year=${year}`, resolved.value),
+      ])
 
       const amountBiz = amount.data?.biz_data
       const costTotal = cost.data?.biz_data?.[0]

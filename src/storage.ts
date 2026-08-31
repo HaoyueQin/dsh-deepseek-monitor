@@ -178,7 +178,10 @@ function memoryTables(): MemoryTables {
 }
 
 /** The process-level store accessor (singleton; see the file contract). */
-export function sharedStore(storageDomain: Context['storageDomain'] | undefined): MonitorStore {
+export function sharedStore(
+  storageDomain: Context['storageDomain'] | undefined,
+  onDegrade?: (message: string) => void,
+): MonitorStore {
   const g = globalThis as unknown as { [STORE_KEY]?: MonitorStore }
   const existing = g[STORE_KEY]
   if (existing !== undefined) return existing
@@ -232,7 +235,12 @@ export function sharedStore(storageDomain: Context['storageDomain'] | undefined)
         return buildOver({ prefs: () => prefsTable, cache: () => cacheTable, index: () => indexTable })
       })
       .then((real) => { active = real })
-      .catch(() => { /* degraded mode stays in memory */ })
+      .catch((cause: unknown) => {
+        // Degraded mode stays in memory. Surface the reason through the
+        // optional callback (host log) — silence by default keeps headless
+        // and unit-test runs clean.
+        onDegrade?.(`storage domain open failed, staying in memory: ${cause instanceof Error ? cause.message : String(cause)}`)
+      })
   }
 
   g[STORE_KEY] = store

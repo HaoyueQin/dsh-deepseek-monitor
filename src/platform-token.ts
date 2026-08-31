@@ -46,6 +46,8 @@ export async function verifyUsageToken(token: string): Promise<void> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
   } catch (cause) {
+    // cause comes from fetch/AbortSignal only (network/timeout) — the token
+    // value never enters an Error message on this path.
     throw new DsmError(502, `验证 token 失败：${cause instanceof Error ? cause.message : String(cause)}`)
   }
   if (response.status === 200) return
