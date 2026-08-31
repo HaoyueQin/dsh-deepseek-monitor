@@ -50,9 +50,10 @@ describe('manifest consistency', () => {
     expect(pkg.main).toBe('lib/index.js')
   })
 
-  it('keeps the alpha.1+ client assembly channel coherent (dsh.client / exports)', () => {
-    // Since 0.1.2-alpha.1 the client-modules entry resolves package.json
-    // dsh.client + exports["./client"] — dsh.plugin.json took no part.
+  it('keeps the rc.1+ client assembly channel coherent (dsh.client / exports)', () => {
+    // The client-modules entry resolves package.json dsh.client plus
+    // exports["./client"] ever since 0.1.1-rc.1 (verified against the tag);
+    // no kernel ever read dsh.plugin.json.
     expect(pkg.dsh?.client?.platform).toBe('web')
     expect(pkg.dsh?.bundle?.patch).toBe('./cordis.patch.yml')
     expect(pkg.exports?.['./client']).toMatchObject({ default: './lib/client.js' })
