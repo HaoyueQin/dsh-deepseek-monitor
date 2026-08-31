@@ -1,6 +1,6 @@
 {
   "id": "dsh-external/dsh-deepseek-monitor",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "./lib/index.js",
   "description": "DeepSeek 余额与开放平台用量监控：模型设置供应商行内增强（余额 chip / 账户明细面板）+ 输入框工具行余额项（conversation.input.right 槽位，模型名称左侧）",
   "engines": {
