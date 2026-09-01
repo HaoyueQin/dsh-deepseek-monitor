@@ -63,7 +63,7 @@ describe('manifest consistency', () => {
     expect(inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
-  it('keeps peer ranges covering rc.1 through alpha.2 (node-semver pre-release rule)', () => {
+  it('keeps peer ranges covering rc.1 through alpha.3 (node-semver pre-release rule)', () => {
     // A single ">=0.1.1-rc.1 <0.2.0" style range rejects pre-release
     // candidates without a same-tuple comparator; the dual range below is the
     // verified cover for each supported kernel generation.
