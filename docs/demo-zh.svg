@@ -21,8 +21,8 @@
     </filter>
     <clipPath id="wclip"><rect x="37" y="27" width="646" height="408" rx="13"/></clipPath>
     <clipPath id="cp">
-      <rect x="216" y="148" width="452" height="0">
-        <animate attributeName="height" values="0;0;276;276;0" keyTimes="0;0.4527;0.5541;0.9459;1" dur="7.4s" repeatCount="indefinite"/>
+      <rect x="216" y="102" width="452" height="0">
+        <animate attributeName="height" values="0;0;322;322;0" keyTimes="0;0.4527;0.5541;0.9459;1" dur="7.4s" repeatCount="indefinite"/>
       </rect>
     </clipPath>
   </defs>
@@ -93,25 +93,28 @@
       <g opacity="0">
         <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.2432;0.2905;0.9459;1" dur="7.4s" repeatCount="indefinite"/>
         <animateTransform attributeName="transform" type="translate" values="24 0;24 0;0 0;0 0;24 0" keyTimes="0;0.2432;0.2905;0.9459;1" dur="7.4s" repeatCount="indefinite"/>
-        <text x="52" y="114" font-size="15" font-weight="600" fill="#16181d">设置</text>
+        <!-- the scene top moves up under the window chrome while the original
+             lower bound stays: the reclaimed space goes to taller model rows
+             and a taller usage chart -->
+        <text x="52" y="68" font-size="15" font-weight="600" fill="#16181d">设置</text>
         <g font-size="12.5">
-          <text x="64" y="152" fill="#6b7078">通用设置</text>
-          <rect x="52" y="166" width="144" height="30" rx="8" fill="#ececf1"/>
-          <text x="64" y="188" fill="#16181d" font-weight="600">模型</text>
-          <text x="64" y="224" fill="#6b7078">插件</text>
-          <text x="64" y="260" fill="#6b7078">技能</text>
-          <text x="64" y="296" fill="#6b7078">MCP</text>
+          <text x="64" y="106" fill="#6b7078">通用设置</text>
+          <rect x="52" y="120" width="144" height="30" rx="8" fill="#ececf1"/>
+          <text x="64" y="142" fill="#16181d" font-weight="600">模型</text>
+          <text x="64" y="178" fill="#6b7078">插件</text>
+          <text x="64" y="214" fill="#6b7078">技能</text>
+          <text x="64" y="250" fill="#6b7078">MCP</text>
         </g>
-        <circle cx="226" cy="120" r="4" fill="#10b981"/>
-        <text x="238" y="125" font-size="13.5" font-weight="600" fill="#16181d">DeepSeek</text>
-        <text x="322" y="125" font-size="11.5" fill="#8a8f99">余额 38.80 CNY</text>
-        <rect x="516" y="103" width="78" height="34" rx="17" fill="#ffffff" stroke="#d5d8df">
+        <circle cx="226" cy="74" r="4" fill="#10b981"/>
+        <text x="238" y="79" font-size="13.5" font-weight="600" fill="#16181d">DeepSeek</text>
+        <text x="322" y="79" font-size="11.5" fill="#8a8f99">余额 38.80 CNY</text>
+        <rect x="516" y="57" width="78" height="34" rx="17" fill="#ffffff" stroke="#d5d8df">
           <animate attributeName="fill" values="#ffffff;#ffffff;#ececf1;#ffffff;#ffffff" keyTimes="0;0.4054;0.4189;0.4595;1" dur="7.4s" repeatCount="indefinite"/>
         </rect>
-        <text x="555" y="124" font-size="11.5" fill="#16181d" text-anchor="middle">账户明细</text>
-        <rect x="606" y="103" width="56" height="34" rx="17" fill="#ffffff" stroke="#d5d8df"/>
-        <text x="634" y="124" font-size="11.5" fill="#16181d" text-anchor="middle">编辑</text>
-        <circle cx="555" cy="120" r="4" fill="none" stroke="#4D6BFE" stroke-width="1.5" opacity="0">
+        <text x="555" y="78" font-size="11.5" fill="#16181d" text-anchor="middle">账户明细</text>
+        <rect x="606" y="57" width="56" height="34" rx="17" fill="#ffffff" stroke="#d5d8df"/>
+        <text x="634" y="78" font-size="11.5" fill="#16181d" text-anchor="middle">编辑</text>
+        <circle cx="555" cy="74" r="4" fill="none" stroke="#4D6BFE" stroke-width="1.5" opacity="0">
           <animate attributeName="r" values="4;4;22;22" keyTimes="0;0.4054;0.473;1" dur="7.4s" repeatCount="indefinite"/>
           <animate attributeName="opacity" values="0;0;0.5;0;0" keyTimes="0;0.4054;0.4257;0.473;1" dur="7.4s" repeatCount="indefinite"/>
         </circle>
@@ -120,101 +123,101 @@
           <g opacity="0">
             <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.4865;0.527;1" dur="7.4s" repeatCount="indefinite"/>
             <animateTransform attributeName="transform" type="translate" values="0 8;0 8;0 0;0 0" keyTimes="0;0.4865;0.527;1" dur="7.4s" repeatCount="indefinite"/>
-            <rect x="230" y="148" width="424" height="76" rx="10" fill="#ffffff" stroke="#e4e6ec"/>
-            <text x="244" y="167" font-size="11" font-weight="600" fill="#16181d">账户余额</text>
-            <path d="M640,162 a6,6 0 1 1 -1.8,-4.4" fill="none" stroke="#8a8f99" stroke-width="1.5" stroke-linecap="round"/>
-            <path d="M638.6,155.2 l-2.4,2.6 3.4,0.9 z" fill="#8a8f99"/>
-            <text x="244" y="205" font-size="14" font-weight="600" fill="#8a8f99">&#165;</text>
-            <text x="257" y="205" font-size="26" font-weight="700" fill="#16181d">38.80</text>
-            <rect x="452" y="156" width="170" height="28" rx="6" fill="#f4f5f8"/>
-            <text x="462" y="174" font-size="10" fill="#8a8f99">今日消耗</text>
-            <text x="612" y="174" font-size="11" font-weight="600" fill="#16181d" text-anchor="end">&#165;2.16</text>
-            <rect x="452" y="190" width="170" height="28" rx="6" fill="#f4f5f8"/>
-            <text x="462" y="208" font-size="10" fill="#8a8f99">本月费用</text>
-            <text x="612" y="208" font-size="11" font-weight="600" fill="#16181d" text-anchor="end">&#165;11.04</text>
+            <rect x="230" y="102" width="424" height="76" rx="10" fill="#ffffff" stroke="#e4e6ec"/>
+            <text x="244" y="121" font-size="11" font-weight="600" fill="#16181d">账户余额</text>
+            <path d="M640,116 a6,6 0 1 1 -1.8,-4.4" fill="none" stroke="#8a8f99" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M638.6,109.2 l-2.4,2.6 3.4,0.9 z" fill="#8a8f99"/>
+            <text x="244" y="159" font-size="14" font-weight="600" fill="#8a8f99">&#165;</text>
+            <text x="257" y="159" font-size="26" font-weight="700" fill="#16181d">38.80</text>
+            <rect x="452" y="110" width="170" height="28" rx="6" fill="#f4f5f8"/>
+            <text x="462" y="128" font-size="10" fill="#8a8f99">今日消耗</text>
+            <text x="612" y="128" font-size="11" font-weight="600" fill="#16181d" text-anchor="end">&#165;2.16</text>
+            <rect x="452" y="144" width="170" height="28" rx="6" fill="#f4f5f8"/>
+            <text x="462" y="162" font-size="10" fill="#8a8f99">本月费用</text>
+            <text x="612" y="162" font-size="11" font-weight="600" fill="#16181d" text-anchor="end">&#165;11.04</text>
           </g>
           <g opacity="0">
             <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.5068;0.5473;1" dur="7.4s" repeatCount="indefinite"/>
             <animateTransform attributeName="transform" type="translate" values="0 8;0 8;0 0;0 0" keyTimes="0;0.5068;0.5473;1" dur="7.4s" repeatCount="indefinite"/>
-            <rect x="230" y="232" width="424" height="36" rx="9" fill="#ffffff" stroke="#e4e6ec"/>
-            <rect x="240" y="240" width="20" height="20" rx="5" fill="#e8f3ff"/>
-            <path d="M251.5,243 L244.5,252 L248.5,252 L247.5,258 L254.5,249.5 L250.5,249.5 Z" fill="#4DA6FF"/>
-            <text x="268" y="254" font-size="12" font-weight="600" fill="#16181d">deepseek-v4-flash</text>
-            <text x="520" y="254" font-size="10" fill="#8a8f99" text-anchor="end">8.42M tokens</text>
-            <text x="608" y="254" font-size="10" font-weight="600" fill="#4DA6FF" text-anchor="end">缓存命中 99.2%</text>
-            <text x="648" y="254" font-size="12" font-weight="600" fill="#16181d" text-anchor="end">&#165;6.84</text>
-            <rect x="268" y="259" width="252" height="4" rx="2" fill="#ececf1"/>
-            <rect x="268" y="259" width="0" height="4" rx="2" fill="url(#pf)">
+            <rect x="230" y="186" width="424" height="42" rx="9" fill="#ffffff" stroke="#e4e6ec"/>
+            <rect x="240" y="197" width="20" height="20" rx="5" fill="#e8f3ff"/>
+            <path d="M251.5,200 L244.5,209 L248.5,209 L247.5,215 L254.5,206.5 L250.5,206.5 Z" fill="#4DA6FF"/>
+            <text x="268" y="211" font-size="12" font-weight="600" fill="#16181d">deepseek-v4-flash</text>
+            <text x="520" y="211" font-size="10" fill="#8a8f99" text-anchor="end">8.42M tokens</text>
+            <text x="608" y="211" font-size="10" font-weight="600" fill="#4DA6FF" text-anchor="end">缓存命中 99.2%</text>
+            <text x="648" y="211" font-size="12" font-weight="600" fill="#16181d" text-anchor="end">&#165;6.84</text>
+            <rect x="268" y="219" width="252" height="4" rx="2" fill="#ececf1"/>
+            <rect x="268" y="219" width="0" height="4" rx="2" fill="url(#pf)">
               <animate attributeName="width" values="0;0;252;252" keyTimes="0;0.5405;0.6351;1" dur="7.4s" repeatCount="indefinite"/>
             </rect>
           </g>
           <g opacity="0">
             <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.527;0.5676;1" dur="7.4s" repeatCount="indefinite"/>
             <animateTransform attributeName="transform" type="translate" values="0 8;0 8;0 0;0 0" keyTimes="0;0.527;0.5676;1" dur="7.4s" repeatCount="indefinite"/>
-            <rect x="230" y="272" width="424" height="36" rx="9" fill="#ffffff" stroke="#e4e6ec"/>
-            <rect x="240" y="280" width="20" height="20" rx="5" fill="#efecfd"/>
+            <rect x="230" y="234" width="424" height="42" rx="9" fill="#ffffff" stroke="#e4e6ec"/>
+            <rect x="240" y="245" width="20" height="20" rx="5" fill="#efecfd"/>
             <g fill="none" stroke="#8F7DF0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="243" y="283" width="14" height="12" rx="2"/>
-              <path d="M243,292.5 L248,289 L251,291.5 L253.5,289 L257,292"/>
+              <rect x="243" y="248" width="14" height="12" rx="2"/>
+              <path d="M243,257.5 L248,254 L251,256.5 L253.5,254 L257,257"/>
             </g>
-            <circle cx="248" cy="287" r="1.6" fill="#8F7DF0"/>
-            <text x="268" y="294" font-size="12" font-weight="600" fill="#16181d">deepseek-v4-flash-vision-exp</text>
-            <text x="520" y="294" font-size="10" fill="#8a8f99" text-anchor="end">1.25M tokens</text>
-            <text x="608" y="294" font-size="10" font-weight="600" fill="#8F7DF0" text-anchor="end">缓存命中 87.4%</text>
-            <text x="648" y="294" font-size="12" font-weight="600" fill="#16181d" text-anchor="end">&#165;1.12</text>
-            <rect x="268" y="299" width="252" height="4" rx="2" fill="#ececf1"/>
-            <rect x="268" y="299" width="0" height="4" rx="2" fill="url(#pv)">
+            <circle cx="248" cy="252" r="1.6" fill="#8F7DF0"/>
+            <text x="268" y="259" font-size="12" font-weight="600" fill="#16181d">deepseek-v4-flash-vision-exp</text>
+            <text x="520" y="259" font-size="10" fill="#8a8f99" text-anchor="end">1.25M tokens</text>
+            <text x="608" y="259" font-size="10" font-weight="600" fill="#8F7DF0" text-anchor="end">缓存命中 87.4%</text>
+            <text x="648" y="259" font-size="12" font-weight="600" fill="#16181d" text-anchor="end">&#165;1.12</text>
+            <rect x="268" y="267" width="252" height="4" rx="2" fill="#ececf1"/>
+            <rect x="268" y="267" width="0" height="4" rx="2" fill="url(#pv)">
               <animate attributeName="width" values="0;0;101;101" keyTimes="0;0.5405;0.6351;1" dur="7.4s" repeatCount="indefinite"/>
             </rect>
           </g>
           <g opacity="0">
             <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.5473;0.5878;1" dur="7.4s" repeatCount="indefinite"/>
             <animateTransform attributeName="transform" type="translate" values="0 8;0 8;0 0;0 0" keyTimes="0;0.5473;0.5878;1" dur="7.4s" repeatCount="indefinite"/>
-            <rect x="230" y="312" width="424" height="36" rx="9" fill="#ffffff" stroke="#e4e6ec"/>
-            <rect x="240" y="320" width="20" height="20" rx="5" fill="#e9edfe"/>
+            <rect x="230" y="282" width="424" height="42" rx="9" fill="#ffffff" stroke="#e4e6ec"/>
+            <rect x="240" y="293" width="20" height="20" rx="5" fill="#e9edfe"/>
             <g fill="none" stroke="#4D6BFE" stroke-width="1.4" stroke-linecap="round">
-              <path d="M250,323 C247,322.5 245,324.5 245.5,326.5 C243.8,327.8 243.8,330.5 245.2,331.8 C245.6,333.6 248,334.4 250,333.5"/>
-              <path d="M250,323 C253,322.5 255,324.5 254.5,326.5 C256.2,327.8 256.2,330.5 254.8,331.8 C254.4,333.6 252,334.4 250,333.5"/>
-              <path d="M250,323 V333.5"/>
+              <path d="M250,296 C247,295.5 245,297.5 245.5,299.5 C243.8,300.8 243.8,303.5 245.2,304.8 C245.6,306.6 248,307.4 250,306.5"/>
+              <path d="M250,296 C253,295.5 255,297.5 254.5,299.5 C256.2,300.8 256.2,303.5 254.8,304.8 C254.4,306.6 252,307.4 250,306.5"/>
+              <path d="M250,296 V306.5"/>
             </g>
-            <text x="268" y="334" font-size="12" font-weight="600" fill="#16181d">deepseek-v4-pro</text>
-            <text x="520" y="334" font-size="10" fill="#8a8f99" text-anchor="end">0.42M tokens</text>
-            <text x="608" y="334" font-size="10" font-weight="600" fill="#4D6BFE" text-anchor="end">缓存命中 64.8%</text>
-            <text x="648" y="334" font-size="12" font-weight="600" fill="#16181d" text-anchor="end">&#165;3.08</text>
-            <rect x="268" y="339" width="252" height="4" rx="2" fill="#ececf1"/>
-            <rect x="268" y="339" width="0" height="4" rx="2" fill="url(#pp)">
+            <text x="268" y="307" font-size="12" font-weight="600" fill="#16181d">deepseek-v4-pro</text>
+            <text x="520" y="307" font-size="10" fill="#8a8f99" text-anchor="end">0.42M tokens</text>
+            <text x="608" y="307" font-size="10" font-weight="600" fill="#4D6BFE" text-anchor="end">缓存命中 64.8%</text>
+            <text x="648" y="307" font-size="12" font-weight="600" fill="#16181d" text-anchor="end">&#165;3.08</text>
+            <rect x="268" y="315" width="252" height="4" rx="2" fill="#ececf1"/>
+            <rect x="268" y="315" width="0" height="4" rx="2" fill="url(#pp)">
               <animate attributeName="width" values="0;0;45;45" keyTimes="0;0.5405;0.6351;1" dur="7.4s" repeatCount="indefinite"/>
             </rect>
           </g>
           <g opacity="0">
             <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.5676;0.6081;1" dur="7.4s" repeatCount="indefinite"/>
             <animateTransform attributeName="transform" type="translate" values="0 8;0 8;0 0;0 0" keyTimes="0;0.5676;0.6081;1" dur="7.4s" repeatCount="indefinite"/>
-            <text x="230" y="367" font-size="11" font-weight="600" fill="#16181d">本月用量</text>
+            <text x="230" y="343" font-size="11" font-weight="600" fill="#16181d">本月用量</text>
             <g font-size="10" fill="#8a8f99">
-              <circle cx="346" cy="363" r="3" fill="#34d399"/>
-              <text x="354" y="367">命中</text>
-              <circle cx="386" cy="363" r="3" fill="#ff9c2b"/>
-              <text x="394" y="367">未命中</text>
-              <circle cx="436" cy="363" r="3" fill="#a78bfa"/>
-              <text x="444" y="367">输出</text>
+              <circle cx="346" cy="339" r="3" fill="#34d399"/>
+              <text x="354" y="343">命中</text>
+              <circle cx="386" cy="339" r="3" fill="#ff9c2b"/>
+              <text x="394" y="343">未命中</text>
+              <circle cx="436" cy="339" r="3" fill="#a78bfa"/>
+              <text x="444" y="343">输出</text>
             </g>
-            <text x="654" y="367" font-size="10.5" fill="#8a8f99" text-anchor="end">&#8249; 2026-08 &#8250;</text>
+            <text x="654" y="343" font-size="10.5" fill="#8a8f99" text-anchor="end">&#8249; 2026-08 &#8250;</text>
             <path d="M236,410.5 H600" stroke="#d8dade" stroke-width="1" stroke-dasharray="3 3"/>
             <g>
-              <g transform="translate(244,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.581;0.632;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-10" width="9" height="10" fill="#34d399"/></g></g>
-              <g transform="translate(267,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.584;0.635;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-22" width="9" height="22" fill="#34d399"/></g></g>
-              <g transform="translate(290,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.587;0.638;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-10" width="9" height="10" fill="#34d399"/><rect x="0" y="-14" width="9" height="4" fill="#ff9c2b"/></g></g>
-              <g transform="translate(313,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.59;0.641;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-30" width="9" height="30" fill="#34d399"/></g></g>
-              <g transform="translate(336,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.593;0.644;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-14" width="9" height="14" fill="#34d399"/></g></g>
-              <g transform="translate(359,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.596;0.647;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-26" width="9" height="26" fill="#34d399"/><rect x="0" y="-34" width="9" height="8" fill="#a78bfa"/></g></g>
-              <g transform="translate(382,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.599;0.65;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-9" width="9" height="9" fill="#34d399"/></g></g>
-              <g transform="translate(405,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.602;0.653;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-34" width="9" height="34" fill="#34d399"/></g></g>
-              <g transform="translate(428,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.605;0.656;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-18" width="9" height="18" fill="#34d399"/><rect x="0" y="-24" width="9" height="6" fill="#ff9c2b"/></g></g>
-              <g transform="translate(451,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.608;0.659;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-12" width="9" height="12" fill="#34d399"/></g></g>
-              <g transform="translate(474,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.611;0.662;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-28" width="9" height="28" fill="#34d399"/></g></g>
-              <g transform="translate(497,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.614;0.665;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-8" width="9" height="8" fill="#34d399"/></g></g>
-              <g transform="translate(520,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.617;0.668;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-22" width="9" height="22" fill="#34d399"/></g></g>
-              <g transform="translate(543,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.62;0.671;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-16" width="9" height="16" fill="#34d399"/><rect x="0" y="-21" width="9" height="5" fill="#ff9c2b"/></g></g>
+              <g transform="translate(244,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.581;0.632;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-14" width="9" height="14" fill="#34d399"/></g></g>
+              <g transform="translate(267,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.584;0.635;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-30" width="9" height="30" fill="#34d399"/></g></g>
+              <g transform="translate(290,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.587;0.638;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-14" width="9" height="14" fill="#34d399"/><rect x="0" y="-19" width="9" height="5" fill="#ff9c2b"/></g></g>
+              <g transform="translate(313,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.59;0.641;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-41" width="9" height="41" fill="#34d399"/></g></g>
+              <g transform="translate(336,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.593;0.644;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-19" width="9" height="19" fill="#34d399"/></g></g>
+              <g transform="translate(359,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.596;0.647;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-35" width="9" height="35" fill="#34d399"/><rect x="0" y="-46" width="9" height="11" fill="#a78bfa"/></g></g>
+              <g transform="translate(382,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.599;0.65;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-12" width="9" height="12" fill="#34d399"/></g></g>
+              <g transform="translate(405,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.602;0.653;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-46" width="9" height="46" fill="#34d399"/></g></g>
+              <g transform="translate(428,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.605;0.656;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-24" width="9" height="24" fill="#34d399"/><rect x="0" y="-32" width="9" height="8" fill="#ff9c2b"/></g></g>
+              <g transform="translate(451,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.608;0.659;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-16" width="9" height="16" fill="#34d399"/></g></g>
+              <g transform="translate(474,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.611;0.662;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-38" width="9" height="38" fill="#34d399"/></g></g>
+              <g transform="translate(497,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.614;0.665;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-11" width="9" height="11" fill="#34d399"/></g></g>
+              <g transform="translate(520,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.617;0.668;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-30" width="9" height="30" fill="#34d399"/></g></g>
+              <g transform="translate(543,410)"><g><animateTransform attributeName="transform" type="scale" values="1 0;1 0;1 1;1 1" keyTimes="0;0.62;0.671;1" dur="7.4s" repeatCount="indefinite"/><rect x="0" y="-22" width="9" height="22" fill="#34d399"/><rect x="0" y="-29" width="9" height="7" fill="#ff9c2b"/></g></g>
             </g>
             <text x="654" y="422" font-size="10" fill="#8a8f99" text-anchor="end">99.2% &#183; 10.1M &#183; &#165;11.04</text>
           </g>
@@ -222,7 +225,7 @@
 
         <g opacity="0">
           <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.2973;0.3243;0.6757;0.7162;1" dur="7.4s" repeatCount="indefinite"/>
-          <animateMotion path="M600,402 C632,330 516,220 555,116" keyPoints="0;0;1;1" keyTimes="0;0.2973;0.4054;1" calcMode="linear" dur="7.4s" repeatCount="indefinite"/>
+          <animateMotion path="M600,402 C632,300 516,170 555,70" keyPoints="0;0;1;1" keyTimes="0;0.2973;0.4054;1" calcMode="linear" dur="7.4s" repeatCount="indefinite"/>
           <path d="M0,0 L0,15 L4.2,11.5 L7,17 L9.8,15.6 L7.2,10.4 L12,10 Z" fill="#16181d" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/>
         </g>
       </g>
