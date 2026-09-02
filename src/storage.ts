@@ -85,20 +85,52 @@ const usageResultSchema = z.object({
   fetchedAt: z.number(),
 })
 
+// Cross-kernel resilience declaration (honored by dsh 0.1.2-alpha.5+; spread
+// in because the rc.2 DomainSpec type predates both fields — an inline
+// literal fails the excess-property check on the rc.2 build baseline, while
+// the rc.2 kernel ignores unknown spec fields at runtime and keeps the
+// pre-alpha.5 behavior):
+// - layout 'per-record': one version-stamped document per record, so the json
+//   backend (the base bundle's default route) exposes `backupRecord`. Its
+//   legacy bootstrap copies every DECLARED table's records as-is into file
+//   names on first open — which is why the usage table became `cache` with
+//   path-safe keys: the historical `usage:YYYY-M` colon keys are not
+//   path-safe (per-record rejects them at write, and migrating them would
+//   break the bootstrap on Windows). The undeclared old table is skipped,
+//   trading one re-fetchable usage cache for a safe migration; prefs survive
+//   intact. rc.2 keeps reading the untouched legacy file, so a version
+//   rollback loses nothing written before the migration.
+// - invalidRecords 'backup-and-skip': a stored row that fails its zod schema
+//   is moved aside (`.bak.<stamp>`) and skipped instead of rejecting the
+//   WHOLE open — right for disposable cache/prefs data, which would
+//   otherwise degrade the entire store to memory mode over one corrupt row.
+//   Backends without `backupRecord` (rc.2, the single layout) keep the loud
+//   reject that the sharedStore catch already handles.
+const PER_RECORD_RESILIENCE = {
+  layout: 'per-record',
+  invalidRecords: 'backup-and-skip',
+} as const
+
 export const monitorDomain = defineDomain({
   name: 'deepseek_monitor',
   version: 1,
+  ...PER_RECORD_RESILIENCE,
   tables: {
     /** Single row (key `prefs`): user preferences. */
     prefs: domainTable<'prefs', MonitorPrefs>(prefsSchema),
     /** Data cache: the balance snapshot under key `balance` and per-month
-     *  usage results under `usage:YYYY-M`. One table on purpose — the
-     *  previously declared dedicated `balance` table was never written. */
-    usage: domainTable<string, UsageResult | BalanceSnapshot>(usageResultSchema.or(balanceSchema)),
-    /** Single row (key `index`): stored usage-month keys. */
-    index: domainTable<'index', Record<string, boolean>>(z.record(z.string(), z.boolean())),
+     *  usage results under `usage-YYYY-M` (path-safe; see
+     *  PER_RECORD_RESILIENCE). One table on purpose. */
+    cache: domainTable<string, UsageResult | BalanceSnapshot>(usageResultSchema.or(balanceSchema)),
   },
 })
+
+/** Cache-row key for a usage month: `usage-2026-8` (path-safe, see
+ *  PER_RECORD_RESILIENCE — the historical `usage:2026-8` colon form would
+ *  reject at write under the per-record layout). */
+function usageKey(year: number, month: number): string {
+  return `usage-${year}-${month}`
+}
 
 export interface MonitorStore {
   getPrefs(): MonitorPrefs
@@ -112,7 +144,7 @@ export interface MonitorStore {
 
 const STORE_KEY = '__dshDeepSeekMonitorStore'
 
-function buildOver(tables: { prefs: () => DsmKv, cache: () => DsmKv, index: () => DsmKv }): MonitorStore {
+function buildOver(tables: { prefs: () => DsmKv, cache: () => DsmKv }): MonitorStore {
   const readPrefs = (): MonitorPrefs => {
     const stored = tables.prefs().get('prefs') as Partial<MonitorPrefs> | undefined
     // The schema defaults composerChipEnabled on legacy rows at parse time,
@@ -135,22 +167,16 @@ function buildOver(tables: { prefs: () => DsmKv, cache: () => DsmKv, index: () =
       else await cache.put('balance', snapshot)
     },
     getUsage(year: number, month: number): UsageResult | null {
-      return (tables.cache().get(`usage:${year}-${month}`) as UsageResult | undefined) ?? null
+      return (tables.cache().get(usageKey(year, month)) as UsageResult | undefined) ?? null
     },
     async setUsage(result) {
-      const cache = tables.cache()
-      const key = `usage:${result.year}-${result.month}`
-      await cache.put(key, result)
-      const index = (tables.index().get('index') as Record<string, true> | undefined) ?? {}
-      index[key] = true
-      await tables.index().put('index', index)
+      await tables.cache().put(usageKey(result.year, result.month), result)
     },
     async clearCache() {
       const cache = tables.cache()
-      const index = (tables.index().get('index') as Record<string, true> | undefined) ?? {}
-      for (const key of Object.keys(index)) await cache.delete(key)
-      await tables.index().put('index', {})
-      await cache.delete('balance')
+      // Snapshot iteration (the domain table's keys() is a snapshot too), so
+      // deleting while iterating cannot skip rows.
+      for (const key of [...cache.keys()]) await cache.delete(key)
     },
   }
 }
@@ -158,23 +184,23 @@ function buildOver(tables: { prefs: () => DsmKv, cache: () => DsmKv, index: () =
 interface MemoryTables {
   prefs: () => DsmKv
   cache: () => DsmKv
-  index: () => DsmKv
   /** The raw maps, so a late domain swap can MIGRATE boot-window writes. */
-  maps: { prefs: Map<string, unknown>, cache: Map<string, unknown>, index: Map<string, unknown> }
+  maps: { prefs: Map<string, unknown>, cache: Map<string, unknown> }
 }
 
 function memoryTables(): MemoryTables {
   const maps = {
     prefs: new Map<string, unknown>(),
     cache: new Map<string, unknown>(),
-    index: new Map<string, unknown>(),
   }
   const wrap = (map: Map<string, unknown>): DsmKv => ({
     get: key => map.get(key),
+    // Snapshot iterator, matching the domain table's keys().
+    keys: () => [...map.keys()][Symbol.iterator](),
     put: async (key, value) => { map.set(key, value) },
     delete: async key => map.delete(key),
   })
-  return { prefs: () => wrap(maps.prefs), cache: () => wrap(maps.cache), index: () => wrap(maps.index), maps }
+  return { prefs: () => wrap(maps.prefs), cache: () => wrap(maps.cache), maps }
 }
 
 /** The process-level store accessor (singleton; see the file contract). */
@@ -189,13 +215,12 @@ export function sharedStore(
   // Start in memory so reads/writes work from tick zero.
   const mem = memoryTables()
   let active: MonitorStore = buildOver(mem)
-  // Serializes the usage-month INDEX read-modify-write across the memory →
-  // domain swap: two concurrent setUsage calls (refresher + a forced panel
-  // fetch) each read-modify-write the index row, and an interleaved pair
-  // loses one caller's month key — clearCache would then never delete that
-  // row and the "cleared" cache keeps serving it. Chaining here (instead of
-  // inside buildOver) keeps one queue alive across the swap, which rebuilds
-  // its tables. Same shape as dsh-usage-statistics-panel's markChain.
+  // Serializes the cache-row writes across the memory → domain swap: a
+  // forced panel fetch and a clearCache racing each other would otherwise
+  // interleave row puts/deletes across the swap boundary. Chaining here
+  // (instead of inside buildOver) keeps one queue alive across the swap,
+  // which rebuilds its tables. Same shape as dsh-usage-statistics-panel's
+  // markChain.
   let indexChain: Promise<void> = Promise.resolve()
   const serialized = (task: () => Promise<void>): Promise<void> => {
     const write = indexChain.then(task)
@@ -226,13 +251,10 @@ export function sharedStore(
       .open(monitorDomain as never)
       .then(async (domain) => {
         const prefsTable = domain.table('prefs') as DsmKv
-        const cacheTable = domain.table('usage') as DsmKv
-        const indexTable = domain.table('index') as DsmKv
+        const cacheTable = domain.table('cache') as DsmKv
         for (const [key, value] of mem.maps.prefs) await prefsTable.put(key, value)
         for (const [key, value] of mem.maps.cache) await cacheTable.put(key, value)
-        const indexRow = mem.maps.index.get('index')
-        if (indexRow !== undefined) await indexTable.put('index', indexRow)
-        return buildOver({ prefs: () => prefsTable, cache: () => cacheTable, index: () => indexTable })
+        return buildOver({ prefs: () => prefsTable, cache: () => cacheTable })
       })
       .then((real) => { active = real })
       .catch((cause: unknown) => {

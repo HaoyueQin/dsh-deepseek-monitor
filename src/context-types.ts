@@ -92,9 +92,10 @@ export interface DsmSessionStore {
 }
 
 /** One storage-domain table (mirror of dsh-storage-domain KvTable members
- *  this plugin touches). */
+ *  this plugin touches). `keys()` is a snapshot iterator on both kernels. */
 export interface DsmKv {
   get(key: string): unknown | undefined
+  keys(): IterableIterator<string>
   put(key: string, value: unknown): Promise<void>
   delete(key: string): Promise<boolean>
 }

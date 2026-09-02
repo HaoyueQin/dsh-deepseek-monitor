@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { _resetSharedStoreForTests, sharedStore } from '../src/storage.ts'
+import { _resetSharedStoreForTests, monitorDomain, sharedStore } from '../src/storage.ts'
 import type { BalanceSnapshot, UsageResult } from '../src/wire.ts'
 
 const snap = (): BalanceSnapshot => ({
@@ -49,17 +49,17 @@ describe('domain swap migration', () => {
     const opened = new Promise<void>(resolve => { resolveOpen = resolve })
     const backing = {
       prefs: new Map<string, unknown>(),
-      usage: new Map<string, unknown>(),
-      index: new Map<string, unknown>(),
+      cache: new Map<string, unknown>(),
     }
     const kv = (m: Map<string, unknown>) => ({
       get: (k: string) => m.get(k),
+      keys: () => [...m.keys()][Symbol.iterator](),
       put: async (k: string, v: unknown) => { m.set(k, v) },
       delete: async (k: string) => m.delete(k),
     })
     const domainStub = {
       open: () => opened.then(() => ({
-        table: (name: string) => kv(backing[name === 'prefs' ? 'prefs' : name === 'index' ? 'index' : 'usage']),
+        table: (name: string) => kv(backing[name === 'prefs' ? 'prefs' : 'cache']),
       })),
     }
 
@@ -72,20 +72,25 @@ describe('domain swap migration', () => {
     // Flush the open -> migrate -> swap chain.
     await vi.waitFor(() => {
       expect(backing.prefs.get('prefs')).toBeTruthy()
-      expect(backing.usage.get('balance')).toBeTruthy()
+      expect(backing.cache.get('balance')).toBeTruthy()
     })
 
     // Reads now come from the REAL tables (a memory-only row would vanish).
-    expect(backing.usage.get('balance')).toMatchObject({ totalBalance: '5.00' })
+    expect(backing.cache.get('balance')).toMatchObject({ totalBalance: '5.00' })
     expect(store.getPrefs().refreshIntervalSeconds).toBe(120)
     expect(store.getBalance()?.currency).toBe('USD')
+    // The cache key is path-safe (`usage-2026-8`): the per-record layout
+    // turns keys into file names, and the historical colon form would
+    // reject at write there.
+    const month = (y: number, m: number): UsageResult => ({ year: y, month: m, models: [], days: [], monthCost: 0, fetchedAt: 1 })
+    await store.setUsage(month(2026, 8))
+    expect(backing.cache.get('usage-2026-8')).toMatchObject({ year: 2026 })
   })
 
   it('reads a legacy prefs row (no composerChipEnabled) as enabled after the swap', async () => {
     const backing = {
       prefs: new Map<string, unknown>(),
-      usage: new Map<string, unknown>(),
-      index: new Map<string, unknown>(),
+      cache: new Map<string, unknown>(),
     }
     // A row persisted by a build before the switch existed: no
     // composerChipEnabled key. refreshIntervalSeconds=300 distinguishes the
@@ -98,12 +103,13 @@ describe('domain swap migration', () => {
     })
     const kv = (m: Map<string, unknown>) => ({
       get: (k: string) => m.get(k),
+      keys: () => [...m.keys()][Symbol.iterator](),
       put: async (k: string, v: unknown) => { m.set(k, v) },
       delete: async (k: string) => m.delete(k),
     })
     const domainStub = {
       open: async () => ({
-        table: (name: string) => kv(name === 'prefs' ? backing.prefs : name === 'index' ? backing.index : backing.usage),
+        table: (name: string) => kv(name === 'prefs' ? backing.prefs : backing.cache),
       }),
     }
     const store = sharedStore(domainStub as never)
@@ -127,19 +133,19 @@ describe('degrade callback', () => {
   })
 })
 
-describe('cache-index write serialization', () => {
-  it('never loses a month key when concurrent writes and clearCache interleave', async () => {
+describe('cache write serialization', () => {
+  it('never loses a row when concurrent writes and clearCache interleave', async () => {
     _resetSharedStoreForTests()
     const backing = {
       prefs: new Map<string, unknown>(),
-      usage: new Map<string, unknown>(),
-      index: new Map<string, unknown>(),
+      cache: new Map<string, unknown>(),
     }
-    // Async kv with a delayed write: without index serialization two
-    // concurrent setUsage calls both read the index row before either put
-    // lands, and the later put drops the earlier call's key.
+    // Async kv with a delayed write: without serialization a clearCache racing
+    // a setUsage could interleave its deletes/puts across the swap boundary
+    // and leave rows behind.
     const kv = (m: Map<string, unknown>) => ({
       get: (k: string) => m.get(k),
+      keys: () => [...m.keys()][Symbol.iterator](),
       put: async (k: string, v: unknown) => { await new Promise(resolve => setTimeout(resolve, 0)); m.set(k, v) },
       delete: async (k: string) => { await new Promise(resolve => setTimeout(resolve, 0)); m.delete(k) },
     })
@@ -147,7 +153,7 @@ describe('cache-index write serialization', () => {
     const opened = new Promise<void>(resolve => { resolveOpen = resolve })
     const domainStub = {
       open: () => opened.then(() => ({
-        table: (name: string) => kv(name === 'prefs' ? backing.prefs : name === 'index' ? backing.index : backing.usage),
+        table: (name: string) => kv(name === 'prefs' ? backing.prefs : backing.cache),
       })),
     }
     const store = sharedStore(domainStub as never)
@@ -161,9 +167,29 @@ describe('cache-index write serialization', () => {
     const month = (y: number, m: number): UsageResult => ({ year: y, month: m, models: [], days: [], monthCost: 0, fetchedAt: 1 })
     await Promise.all([store.setUsage(month(2026, 1)), store.setUsage(month(2026, 2))])
     await store.clearCache()
-    // clearCache deletes every row named in the index; a lost key would
-    // leave its row behind and keep serving stale data.
+    // clearCache deletes every cached row; a lost key would leave its row
+    // behind and keep serving stale data.
     expect(store.getUsage(2026, 1)).toBeNull()
     expect(store.getUsage(2026, 2)).toBeNull()
+  })
+})
+
+describe('domain spec declaration', () => {
+  it('declares the per-record + backup-and-skip resilience honored by the alpha.5 kernel', () => {
+    // Module load already ran defineDomain on the devDeps kernel: rc.2 lets
+    // the unknown fields pass through untouched (loud-reject kept); alpha.5
+    // validates and honors them. Pin both fields so a typo can never
+    // silently drop the policy.
+    expect(monitorDomain.layout).toBe('per-record')
+    expect(monitorDomain.invalidRecords).toBe('backup-and-skip')
+  })
+
+  it('keeps every table name path-safe for the per-record layout', () => {
+    // Per-record documents become file names (`[a-zA-Z0-9_-]+`); a table
+    // name must never reintroduce an unsafe character (the write-side key
+    // format is pinned by the `usage-2026-8` assertion above).
+    for (const table of Object.keys(monitorDomain.tables)) {
+      expect(table).toMatch(/^[a-zA-Z0-9_-]+$/)
+    }
   })
 })
