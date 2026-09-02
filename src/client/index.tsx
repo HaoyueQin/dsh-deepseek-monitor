@@ -13,7 +13,7 @@
 // ui-conversation/ui-chat/ui-session). No upstream type-graph address spans both
 // kernels, so the small faces this plugin touches are mirrored here; register/
 // inject signatures were cross-checked against 0.1.1-rc.2, 0.1.2-alpha.1,
-// 0.1.2-alpha.3 and 0.1.2-alpha.4 sources and are identical.
+// 0.1.2-alpha.3, 0.1.2-alpha.4 and 0.1.2-alpha.5 sources and are identical.
 import type { Context } from '@deepseek-ai/cordis'
 import { BalanceChip } from './BalanceChip.tsx'
 import { setupAugment } from './augment.tsx'
@@ -44,7 +44,7 @@ declare module '@deepseek-ai/cordis' {
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
     /** Structural mirror of ui-conversation's declaration — identical on
-     *  0.1.1-rc.2 through 0.1.2-alpha.4 (kind list / scope session); the
+     *  0.1.1-rc.2 through 0.1.2-alpha.5 (kind list / scope session); the
      *  type-level `owner: InputZone` field exists through alpha.3 and is
      *  dropped in alpha.4, so the mirror keeps a structural-superset
      *  `owner: object` covering both generations. */
