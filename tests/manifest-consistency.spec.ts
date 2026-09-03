@@ -63,11 +63,12 @@ describe('manifest consistency', () => {
     expect(inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
-  it('keeps peer ranges covering rc.1 through alpha.5 (node-semver pre-release rule)', () => {
-    // A single ">=0.1.1-rc.1 <0.2.0" style range rejects pre-release
-    // candidates without a same-tuple comparator; the dual range below is the
-    // verified cover for each supported kernel generation.
-    const PEER_RANGE = '^0.1.1-rc.1 || ^0.1.2-alpha.1'
+  it('keeps peer ranges covering 0.1.2-rc.1 and later (node-semver pre-release rule)', () => {
+    // "^0.1.2-rc.1" matches every 0.1.2-rc.x and the 0.1.2/0.1.3 line while
+    // rejecting the retired 0.1.1-rc.x / 0.1.2-alpha.x kernels — the rc.1-only
+    // support policy (older DSH users are pointed at this plugin's older
+    // releases).
+    const PEER_RANGE = '^0.1.2-rc.1'
     const names = [
       '@deepseek-ai/dsh-client-locale',
       '@deepseek-ai/dsh-client-ui-conversation',
@@ -77,6 +78,10 @@ describe('manifest consistency', () => {
       '@deepseek-ai/dsh-storage-domain',
     ]
     for (const name of names) expect(pkg.peerDependencies?.[name]).toBe(PEER_RANGE)
+    // The bare 'cordis' package is retired upstream (rc.1 peers on
+    // @deepseek-ai/cordis); it must not come back into the manifest.
+    expect(pkg.peerDependencies?.['cordis']).toBeUndefined()
+    expect(pkg.peerDependencies?.['@deepseek-ai/cordis']).toBe('^4.0.1')
   })
 
   it('the manifest description never re-advertises a retired surface', () => {

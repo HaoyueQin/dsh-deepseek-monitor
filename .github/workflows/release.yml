@@ -58,4 +58,17 @@ jobs:
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME" "$TARBALL"
+        run: |
+          gh release create "$GITHUB_REF_NAME" --generate-notes --title "$GITHUB_REF_NAME" "$TARBALL"
+          # Append the version-compatibility notice to the auto-generated body
+          # so every release page tells older-DSH users exactly what to do.
+          gh release view "$GITHUB_REF_NAME" --json body -q .body > release-notes.md
+          {
+            echo ""
+            echo "## 兼容性提示 / Compatibility notice"
+            echo ""
+            echo "- 支持 DeepSeek Harness **≥ 0.1.2-rc.1**。"
+            echo "- 旧版 DeepSeek Harness（0.1.1-rc.x / 0.1.2-alpha.x 及更早）用户：请安装本插件的**旧版本**（如 v0.1.4）。"
+            echo "- Requires DeepSeek Harness **≥ 0.1.2-rc.1**. Users on older kernels (0.1.1-rc.x / 0.1.2-alpha.x and earlier) should install an **earlier release** of this plugin (e.g. v0.1.4)."
+          } >> release-notes.md
+          gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md

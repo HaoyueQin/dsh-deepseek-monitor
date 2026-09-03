@@ -37,17 +37,17 @@ const NODE_BUILTINS = new Set([
   ...builtinModules.map(id => `node:${id}`),
 ])
 
-/** Module specifiers the web shell shares into the frozen module table. */
+/** Module specifiers the web shell shares into the frozen module table
+ *  (mirror of dsh-client-web's PLATFORM_MODULES on the 0.1.2-rc.1 baseline). */
 const CLIENT_EXTERNALS = [
   'react',
   'react/jsx-runtime',
   'react-dom',
   'react-dom/client',
-  'cordis',
+  '@deepseek-ai/cordis',
+  '@deepseek-ai/dsh-client-store',
   '@deepseek-ai/dsh-client-ui-slots',
-  '@deepseek-ai/dsh-client-web-react',
   '@deepseek-ai/dsh-client-ui-primitives',
-  '@deepseek-ai/dsh-client-schema-form',
 ]
 
 /**

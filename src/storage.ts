@@ -85,11 +85,8 @@ const usageResultSchema = z.object({
   fetchedAt: z.number(),
 })
 
-// Cross-kernel resilience declaration (honored by dsh 0.1.2-alpha.5+; spread
-// in because the rc.2 DomainSpec type predates both fields — an inline
-// literal fails the excess-property check on the rc.2 build baseline, while
-// the rc.2 kernel ignores unknown spec fields at runtime and keeps the
-// pre-alpha.5 behavior):
+// Resilience declaration (dsh 0.1.2-rc.1 baseline; both fields are native
+// to the rc.1 DomainSpec — no version workaround needed):
 // - layout 'per-record': one version-stamped document per record, so the json
 //   backend (the base bundle's default route) exposes `backupRecord`. Its
 //   legacy bootstrap copies every DECLARED table's records as-is into file
@@ -98,36 +95,30 @@ const usageResultSchema = z.object({
 //   path-safe (per-record rejects them at write, and migrating them would
 //   break the bootstrap on Windows). The undeclared old table is skipped,
 //   trading one re-fetchable usage cache for a safe migration; prefs survive
-//   intact. rc.2 keeps reading the untouched legacy file, so a version
-//   rollback loses nothing written before the migration.
+//   intact. The untouched legacy file keeps working, so a version rollback
+//   loses nothing written before the migration.
 // - invalidRecords 'backup-and-skip': a stored row that fails its zod schema
 //   is moved aside (`.bak.<stamp>`) and skipped instead of rejecting the
 //   WHOLE open — right for disposable cache/prefs data, which would
 //   otherwise degrade the entire store to memory mode over one corrupt row.
-//   Backends without `backupRecord` (rc.2, the single layout) keep the loud
-//   reject that the sharedStore catch already handles.
-const PER_RECORD_RESILIENCE = {
-  layout: 'per-record',
-  invalidRecords: 'backup-and-skip',
-} as const
-
 export const monitorDomain = defineDomain({
   name: 'deepseek_monitor',
   version: 1,
-  ...PER_RECORD_RESILIENCE,
+  layout: 'per-record',
+  invalidRecords: 'backup-and-skip',
   tables: {
     /** Single row (key `prefs`): user preferences. */
     prefs: domainTable<'prefs', MonitorPrefs>(prefsSchema),
     /** Data cache: the balance snapshot under key `balance` and per-month
-     *  usage results under `usage-YYYY-M` (path-safe; see
-     *  PER_RECORD_RESILIENCE). One table on purpose. */
+     *  usage results under `usage-YYYY-M` (path-safe). One table on
+     *  purpose. */
     cache: domainTable<string, UsageResult | BalanceSnapshot>(usageResultSchema.or(balanceSchema)),
   },
 })
 
-/** Cache-row key for a usage month: `usage-2026-8` (path-safe, see
- *  PER_RECORD_RESILIENCE — the historical `usage:2026-8` colon form would
- *  reject at write under the per-record layout). */
+/** Cache-row key for a usage month: `usage-2026-8` (path-safe — the
+ *  historical `usage:2026-8` colon form would reject at write under the
+ *  per-record layout). */
 function usageKey(year: number, month: number): string {
   return `usage-${year}-${month}`
 }
@@ -248,7 +239,7 @@ export function sharedStore(
     // landing mid-copy after its key was taken still misses — an accepted
     // sub-millisecond window, documented rather than pretended away.
     void storageDomain
-      .open(monitorDomain as never)
+      .open(monitorDomain)
       .then(async (domain) => {
         const prefsTable = domain.table('prefs') as DsmKv
         const cacheTable = domain.table('cache') as DsmKv

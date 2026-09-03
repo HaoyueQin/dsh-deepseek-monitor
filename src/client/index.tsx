@@ -5,57 +5,44 @@
  * 用量 button + expandable panel inside 设置→模型→DeepSeek).
  * No standalone settings section by design — monitoring lives in the row.
  */
-// Cross-version client context (structural mirror, same discipline as the host
-// half's context-types.ts): `@deepseek-ai/dsh-client-runtime` — the 0.1.1-rc.2 home
-// of ClientContext, the `slots` service and the SessionStandardProps sessionId
-// merge — is retired in dsh 0.1.2-alpha.1 (ClientContext is now just the cordis
-// Context; `slots` moved to dsh-client-ui-renderer; the sessionId merge moved into
-// ui-conversation/ui-chat/ui-session). No upstream type-graph address spans both
-// kernels, so the small faces this plugin touches are mirrored here; register/
-// inject signatures were cross-checked against 0.1.1-rc.2, 0.1.2-alpha.1,
-// 0.1.2-alpha.3, 0.1.2-alpha.4 and 0.1.2-alpha.5 sources and are identical.
+// DSH 0.1.2-rc.1 baseline: ClientContext is the cordis Context; the `slots`
+// service lives on dsh-client-ui-renderer's SlotRegistry; the sessionId merge
+// lives on ui-session's SessionStandardProps. The faces below are mirrored
+// (never imported for values) exactly as rc.1 declares them, so a type drift
+// from upstream is caught here at build time against the rc.1 dev baseline.
 import type { Context } from '@deepseek-ai/cordis'
+import type { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { BalanceChip } from './BalanceChip.tsx'
 import { setupAugment } from './augment.tsx'
 import { LOCALE_NS, en, zh, zhTW, type DeepSeekMonitorKey } from './locales.ts'
 
-/** Client-half context alias (the type is the cordis Context on both kernels). */
+/** Client-half context alias (the type is the cordis Context on this kernel). */
 type ClientContext = Context
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
-    /** Slot registry service (runtime on 0.1.1-rc.2, ui-renderer on 0.1.2-alpha.1). */
-    slots: {
-      inject(key: string, callback: () => (() => void) | void): () => void
-      register(options: {
-        name: string
-        id?: string
-        order?: number
-        locale?: string
-      }, component: unknown): () => void
-    }
-    /** Browser locale registry (same face on both kernels). */
+    /** Slot registry service (ui-renderer's SlotRegistry on 0.1.2-rc.1). */
+    slots: SlotRegistry
+    /** Browser locale registry (locale's LocaleRuntime face, rc.1). */
     locale: {
       register(ns: string, locale: string, dict: Record<string, string>): () => void
+      getLocale(): { active: string }
+      subscribe(listener: () => void): () => void
     }
   }
 }
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
-    /** Structural mirror of ui-conversation's declaration — identical on
-     *  0.1.1-rc.2 through 0.1.2-alpha.5 (kind list / scope session); the
-     *  type-level `owner: InputZone` field exists through alpha.3 and is
-     *  dropped in alpha.4, so the mirror keeps a structural-superset
-     *  `owner: object` covering both generations. */
+    /** ui-conversation's declaration on 0.1.2-rc.1 (kind list / scope
+     *  session; no owner share). */
     'conversation.input.right': {
       kind: 'list'
       scope: 'session'
-      owner: object
     }
   }
   interface SessionStandardProps {
-    /** Framework-resolved current session id (mirror of the runtime/upstream merge). */
+    /** Framework-resolved current session id (ui-session merge on rc.1). */
     sessionId: string
   }
   interface LocaleNamespaceMap {
@@ -86,21 +73,16 @@ export function apply(ctx: ClientContext): void {
     locale: LOCALE_NS,
   }, BalanceChip))
 
-  // The provider-row augmentation. The locale service face is read through a
-  // narrow structural cast (getLocale().active / subscribe), matching what the
-  // runtime exposes on this build.
+  // The provider-row augmentation. The locale face (getLocale().active /
+  // subscribe) is exactly what the rc.1 LocaleRuntime exposes.
   ctx.effect(() => {
-    const locale = ctx.locale as unknown as {
-      getLocale?: () => { active?: string }
-      subscribe?: (listener: () => void) => () => void
-    }
     const dict = (): Record<string, string> => {
-      const active = locale.getLocale?.().active
+      const active = ctx.locale.getLocale().active
       return active === 'en' ? en : active === 'zh-TW' ? zhTW : zh
     }
     return setupAugment({
       dict,
-      onLocaleChange: listener => locale.subscribe?.(listener) ?? (() => {}),
+      onLocaleChange: listener => ctx.locale.subscribe(listener),
     })
   }, 'dsh-deepseek-monitor: provider-row augmentation')
 }

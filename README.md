@@ -67,6 +67,11 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 > 已在 npm 发布：[dsh-deepseek-monitor](https://www.npmjs.com/package/dsh-deepseek-monitor)。也可以从 [GitHub Releases](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases) 下载 `dsh-deepseek-monitor-<version>.tgz`，通过本地 profile / 注入器方式装载。
 
+## 版本兼容
+
+- **支持 DeepSeek Harness ≥ 0.1.2-rc.1**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.2-rc.1`）。
+- **旧版 DeepSeek Harness 用户**（0.1.1-rc.x / 0.1.2-alpha.x 及更早）：请安装本插件的**旧版本**（例如 [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)），旧版插件仅适配这些内核。
+
 ## 开发
 
 ```sh

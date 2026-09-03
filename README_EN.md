@@ -67,6 +67,11 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 > Published on npm: [dsh-deepseek-monitor](https://www.npmjs.com/package/dsh-deepseek-monitor). Alternatively, download `dsh-deepseek-monitor-<version>.tgz` from [GitHub Releases](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases) and mount it via a local profile / injector.
 
+## Version compatibility
+
+- **Requires DeepSeek Harness ≥ 0.1.2-rc.1** (declared via `dsh.plugin.json` `engines.dsh`; peer range `^0.1.2-rc.1`).
+- **Users on older DeepSeek Harness** (0.1.1-rc.x / 0.1.2-alpha.x and earlier): install an **earlier release of this plugin** (e.g. [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)), which targets those kernels.
+
 ## Development
 
 ```sh

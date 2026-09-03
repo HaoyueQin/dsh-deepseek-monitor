@@ -1,15 +1,18 @@
 /**
  * Structural types for the cordis services this plugin consumes. A
  * third-party plugin resolves outside the DSH monorepo's single cordis
- * instance, so the upstream `declare module 'cordis'` augmentations do not
- * reach this Context — the members below mirror the actual runtime shapes
- * this plugin touches. Drift from upstream is contained to this file.
+ * instance, so the upstream `declare module '@deepseek-ai/cordis'`
+ * augmentations do not reach this Context — the members below mirror the
+ * actual runtime shapes this plugin touches. Drift from upstream is
+ * contained to this file. (DSH 0.1.2-rc.1 baseline: every host/client
+ * package peers on @deepseek-ai/cordis 4.0.2; the bare `cordis` package is
+ * retired.)
  *
  * This file must stay FREE of Node.js types (`node:http`, `node:stream`,
  * `Buffer`): it is part of the CLIENT-reachable declaration graph, so a Node
  * import here would leak into browser-only consumer builds.
  */
-import type { Context } from 'cordis'
+import type { Context } from '@deepseek-ai/cordis'
 
 /** The request face route handlers see (structural subset of node's
  *  IncomingMessage). */
@@ -110,7 +113,7 @@ export interface DsmStorageDomain {
   open(spec: { name: string, version: number, tables: Record<string, unknown> }): Promise<DsmDomain>
 }
 
-declare module 'cordis' {
+declare module '@deepseek-ai/cordis' {
   interface Context {
     effect(dispose: () => void | (() => void), label?: string): void
     webServer: DsmWebServer
