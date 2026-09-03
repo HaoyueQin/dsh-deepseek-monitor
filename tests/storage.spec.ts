@@ -175,11 +175,10 @@ describe('cache write serialization', () => {
 })
 
 describe('domain spec declaration', () => {
-  it('declares the per-record + backup-and-skip resilience honored by the alpha.5 kernel', () => {
-    // Module load already ran defineDomain on the devDeps kernel: rc.2 lets
-    // the unknown fields pass through untouched (loud-reject kept); alpha.5
-    // validates and honors them. Pin both fields so a typo can never
-    // silently drop the policy.
+  it('declares the per-record + backup-and-skip resilience of the rc.1 DomainSpec', () => {
+    // Module load already ran defineDomain on the devDeps kernel: both fields
+    // are native, validated DomainSpec options on the 0.1.2-rc.1 baseline.
+    // Pin both fields so a typo can never silently drop the policy.
     expect(monitorDomain.layout).toBe('per-record')
     expect(monitorDomain.invalidRecords).toBe('backup-and-skip')
   })

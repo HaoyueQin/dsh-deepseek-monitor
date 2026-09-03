@@ -69,7 +69,7 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 ## Version compatibility
 
-- **Requires DeepSeek Harness ≥ 0.1.2-rc.1** (declared via `dsh.plugin.json` `engines.dsh`; peer range `^0.1.2-rc.1`).
+- **Requires DeepSeek Harness ≥ 0.1.2-rc.1** (declared via `dsh.plugin.json` `engines.dsh`; peer range `^0.1.2-rc.1`). Per node-semver rules the range covers 0.1.2-rc.x and later 0.1.x **stable** releases; pre-releases of newer minors (e.g. `0.1.3-rc.1`) do not match and are added alongside a future plugin update.
 - **Users on older DeepSeek Harness** (0.1.1-rc.x / 0.1.2-alpha.x and earlier): install an **earlier release of this plugin** (e.g. [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)), which targets those kernels.
 
 ## Development

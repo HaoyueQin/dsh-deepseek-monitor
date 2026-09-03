@@ -67,8 +67,9 @@ jobs:
             echo ""
             echo "## 兼容性提示 / Compatibility notice"
             echo ""
-            echo "- 支持 DeepSeek Harness **≥ 0.1.2-rc.1**。"
+            echo "- 支持 DeepSeek Harness **≥ 0.1.2-rc.1**（peer 范围 \`^0.1.2-rc.1\` 覆盖 0.1.2-rc.x 及其后 0.1.x 正式版；更高小版本的 pre-release 届时随插件更新扩展）。"
             echo "- 旧版 DeepSeek Harness（0.1.1-rc.x / 0.1.2-alpha.x 及更早）用户：请安装本插件的**旧版本**（如 v0.1.4）。"
-            echo "- Requires DeepSeek Harness **≥ 0.1.2-rc.1**. Users on older kernels (0.1.1-rc.x / 0.1.2-alpha.x and earlier) should install an **earlier release** of this plugin (e.g. v0.1.4)."
+            echo "- Requires DeepSeek Harness **≥ 0.1.2-rc.1** (peer range \`^0.1.2-rc.1\` covers 0.1.2-rc.x and later 0.1.x stable releases; pre-releases of newer minors are added alongside a future plugin update)."
+            echo "- Users on older kernels (0.1.1-rc.x / 0.1.2-alpha.x and earlier) should install an **earlier release** of this plugin (e.g. v0.1.4)."
           } >> release-notes.md
           gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md

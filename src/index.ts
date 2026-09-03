@@ -171,7 +171,7 @@ export function apply(ctx: Context, config: DeepSeekMonitorConfig = {}): void {
         ctx.logger.warn(cause instanceof Error ? cause : new Error(String(cause)))
         startRefresher()
       })
-    const dispose = ctx.webServer.register(buildMonitorRoute(ctx, config.version ?? PLUGIN_VERSION, services) as never)
+    const dispose = ctx.webServer.register(buildMonitorRoute(ctx, config.version ?? PLUGIN_VERSION, services))
     return () => {
       active = false
       refresher.dispose()

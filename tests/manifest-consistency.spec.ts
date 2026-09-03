@@ -21,6 +21,7 @@ const manifest = JSON.parse(read('dsh.plugin.json')) as {
   id: string
   version: string
   description: string
+  engines?: { dsh?: string }
   client: { main: string }
 }
 
@@ -82,6 +83,13 @@ describe('manifest consistency', () => {
     // @deepseek-ai/cordis); it must not come back into the manifest.
     expect(pkg.peerDependencies?.['cordis']).toBeUndefined()
     expect(pkg.peerDependencies?.['@deepseek-ai/cordis']).toBe('^4.0.1')
+  })
+
+  it('declares the rc.1 kernel floor in dsh.plugin.json engines', () => {
+    // The README 版本兼容 section quotes engines.dsh as the support floor;
+    // lock it so the manifest and the docs cannot drift from the rc.1-only
+    // support policy. (Declarative metadata: no host reads engines today.)
+    expect(manifest.engines?.dsh).toBe('>=0.1.2-rc.1')
   })
 
   it('the manifest description never re-advertises a retired surface', () => {
