@@ -10,7 +10,7 @@ import type { BalanceSnapshot, ModelRouteInfo, MonitorPrefs, MonitorStatus, Usag
 import { DEFAULT_PREFS, DsmError, readJsonBody, writeError, writeJson } from './wire.ts'
 import { createTrustFence, type TrustFence } from './trust-fence.ts'
 
-export const PLUGIN_VERSION = '0.1.4'
+export const PLUGIN_VERSION = '0.1.5'
 
 /** Endpoints the current build serves (the UI's capability probe). */
 const ENDPOINTS = [
