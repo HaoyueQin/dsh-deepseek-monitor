@@ -38,7 +38,8 @@ const NODE_BUILTINS = new Set([
 ])
 
 /** Module specifiers the web shell shares into the frozen module table
- *  (mirror of dsh-client-web's PLATFORM_MODULES on the 0.1.2-rc.1 baseline). */
+ *  (mirror of dsh-client-web's PLATFORM_MODULES on the 0.1.5-alpha.1
+ *  baseline, which adds dsh-client-ui-dockkit). */
 const CLIENT_EXTERNALS = [
   'react',
   'react/jsx-runtime',
@@ -48,11 +49,13 @@ const CLIENT_EXTERNALS = [
   '@deepseek-ai/dsh-client-store',
   '@deepseek-ai/dsh-client-ui-slots',
   '@deepseek-ai/dsh-client-ui-primitives',
+  '@deepseek-ai/dsh-client-ui-dockkit',
 ]
 
 /**
- * Wire/type layers a client bundle may inline (mirror of the official
- * INLINE_SAFE list).
+ * Wire/type layers a client bundle may inline (narrower than the official
+ * INLINE_SAFE list on purpose: this client has no @deepseek-ai value imports
+ * beyond the platform table, so the gate stays strict).
  */
 const INLINE_SAFE = /^@deepseek-ai\/dsh-(host-apiproxy|session|llm|tools|brand)(\/|$)/
 

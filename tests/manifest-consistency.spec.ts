@@ -64,20 +64,15 @@ describe('manifest consistency', () => {
     expect(inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
-  it('keeps peer ranges covering the 0.1.2 and 0.1.3 lines (node-semver pre-release rule)', () => {
-    // "^0.1.2-rc.1" alone matches every 0.1.2-rc.x plus the 0.1.2/0.1.3
-    // STABLE releases, but node-semver admits a pre-release only when a
-    // comparator shares its [major, minor, patch] tuple — so the 0.1.3
-    // pre-releases (alpha.2 and later) need the second arm. Together the
-    // range covers 0.1.2-rc.x, 0.1.2 stable, 0.1.3-alpha.2+, and 0.1.3
-    // stable, while rejecting the retired 0.1.1-rc.x / 0.1.2-alpha.x kernels
-    // (older DSH users are pointed at this plugin's older releases) and
-    // future pre-release lines such as 0.1.4-alpha.x, which are added with
-    // the plugin update that verifies them. devDependencies stay pinned to
-    // the 0.1.2-rc.1 floor on purpose: building against the oldest
-    // supported API proves no newer-only API is used, keeping the build
-    // runtime-safe on both lines.
-    const PEER_RANGE = '^0.1.2-rc.1 || ^0.1.3-alpha.2'
+  it('keeps peer ranges on the 0.1.5 line only (node-semver pre-release rule)', () => {
+    // node-semver admits a pre-release only when a comparator shares its
+    // [major, minor, patch] tuple — so the 0.1.5-alpha.x kernels need the
+    // ^0.1.5-alpha.1 arm, which also covers 0.1.5 stable when it lands.
+    // Older lines (0.1.2-rc.x / 0.1.3-alpha.x and earlier) are intentionally
+    // rejected: their users stay on this plugin's 0.1.5 release. Both
+    // devDependencies and the build baseline track the same 0.1.5-alpha.1
+    // floor.
+    const PEER_RANGE = '^0.1.5-alpha.1'
     const names = [
       '@deepseek-ai/dsh-client-locale',
       '@deepseek-ai/dsh-client-ui-conversation',
@@ -93,12 +88,11 @@ describe('manifest consistency', () => {
     expect(pkg.peerDependencies?.['@deepseek-ai/cordis']).toBe('^4.0.1')
   })
 
-  it('declares the dual-line kernel range in dsh.plugin.json engines', () => {
+  it('declares the 0.1.5-only kernel range in dsh.plugin.json engines', () => {
     // The README 版本兼容 section quotes engines.dsh as the support range;
-    // lock it so the manifest and the docs cannot drift from the
-    // 0.1.2-rc.1 + 0.1.3 dual-line support policy. (Declarative metadata:
-    // no host reads engines today.)
-    expect(manifest.engines?.dsh).toBe('^0.1.2-rc.1 || ^0.1.3-alpha.2')
+    // lock it so the manifest and the docs cannot drift from the 0.1.5-only
+    // support policy. (Declarative metadata: no host reads engines today.)
+    expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1')
   })
 
   it('the manifest description never re-advertises a retired surface', () => {

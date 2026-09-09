@@ -69,8 +69,8 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 ## 版本兼容
 
-- **支持 DeepSeek Harness 0.1.2-rc.1 与 0.1.3 双版本线**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.2-rc.1 || ^0.1.3-alpha.2`）。按 node-semver 规则，该范围覆盖 0.1.2-rc.x、0.1.2 正式版、0.1.3-alpha.2 及之后的 0.1.3 pre-release、0.1.3 正式版；构建基线固定在 0.1.2-rc.1（devDependencies），即按最老受支持 API 编译，保证两条线运行时兼容。更新小版本的 pre-release（如 `0.1.4-alpha.1`）不匹配，届时随插件更新同步扩展 peer 范围。
-- **旧版 DeepSeek Harness 用户**（0.1.1-rc.x / 0.1.2-alpha.x 及更早）：请安装本插件的**旧版本**（例如 [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)），旧版插件仅适配这些内核。
+- **仅支持 DeepSeek Harness 0.1.5 版本线**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.5-alpha.1`）。按 node-semver 规则，该范围覆盖 0.1.5-alpha.1 及之后的 0.1.5 pre-release 与 0.1.5 正式版；构建基线固定在 0.1.5-alpha.1（devDependencies），即按当前受支持 API 编译。
+- **旧版 DeepSeek Harness 用户**（0.1.2-rc.x / 0.1.3-alpha.x 及更早）：请安装本插件的**旧版本**（0.1.2/0.1.3 内核请用 [v0.1.5](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.5)，更早内核请用 [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)）。
 
 ## 开发
 

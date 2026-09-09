@@ -85,8 +85,8 @@ const usageResultSchema = z.object({
   fetchedAt: z.number(),
 })
 
-// Resilience declaration (dsh 0.1.2-rc.1 baseline; both fields are native
-// to the rc.1 DomainSpec — no version workaround needed):
+// Resilience declaration (dsh 0.1.5-alpha.1 baseline; both fields are native
+// to the DomainSpec since rc.1 — no version workaround needed):
 // - layout 'per-record': one version-stamped document per record, so the json
 //   backend (the base bundle's default route) exposes `backupRecord`. Its
 //   legacy bootstrap copies every DECLARED table's records as-is into file

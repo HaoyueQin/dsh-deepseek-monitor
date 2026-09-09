@@ -5,11 +5,11 @@
 # right after a kernel bump; aged releases resolve fine without them.
 minimumReleaseAgeExclude:
   - '@deepseek-ai/cordis@4.0.2'
-  - '@deepseek-ai/dsh-client-locale@0.1.2-rc.1'
-  - '@deepseek-ai/dsh-client-ui-conversation@0.1.2-rc.1'
-  - '@deepseek-ai/dsh-client-ui-renderer@0.1.2-rc.1'
-  - '@deepseek-ai/dsh-client-ui-settings@0.1.2-rc.1'
-  - '@deepseek-ai/dsh-client-ui-slots@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-client-locale@0.1.5-alpha.1'
+  - '@deepseek-ai/dsh-client-ui-conversation@0.1.5-alpha.1'
+  - '@deepseek-ai/dsh-client-ui-renderer@0.1.5-alpha.1'
+  - '@deepseek-ai/dsh-client-ui-settings@0.1.5-alpha.1'
+  - '@deepseek-ai/dsh-client-ui-slots@0.1.5-alpha.1'
   - '@deepseek-ai/dsh-invariants@0.1.2-rc.1'
-  - '@deepseek-ai/dsh-storage-domain@0.1.2-rc.1'
+  - '@deepseek-ai/dsh-storage-domain@0.1.5-alpha.1'
   - '@deepseek-ai/dsh-storage@0.1.2-rc.1'

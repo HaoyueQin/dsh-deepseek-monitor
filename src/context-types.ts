@@ -4,7 +4,7 @@
  * instance, so the upstream `declare module '@deepseek-ai/cordis'`
  * augmentations do not reach this Context — the members below mirror the
  * actual runtime shapes this plugin touches. Drift from upstream is
- * contained to this file. (DSH 0.1.2-rc.1 baseline: every host/client
+ * contained to this file. (DSH 0.1.5-alpha.1 baseline: every host/client
  * package peers on @deepseek-ai/cordis 4.0.2; the bare `cordis` package is
  * retired.)
  *
