@@ -95,6 +95,40 @@ describe('manifest consistency', () => {
     expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1')
   })
 
+  it('keeps CLIENT_EXTERNALS covering the shell platform table', () => {
+    // tsdown.config.ts mirrors the shell PLATFORM_MODULES from dsh-client-web
+    // (packages/client/web/src/platform.ts on the 0.1.5-alpha.1 baseline).
+    // A dropped entry silently inlines or trips the purity gate, so lock the
+    // known-good set here; when the shell adds a module, mirror it there
+    // and extend this list.
+    const PLATFORM_MODULES = [
+      'react',
+      'react/jsx-runtime',
+      'react-dom',
+      'react-dom/client',
+      '@deepseek-ai/cordis',
+      '@deepseek-ai/dsh-client-store',
+      '@deepseek-ai/dsh-client-ui-slots',
+      '@deepseek-ai/dsh-client-ui-primitives',
+      '@deepseek-ai/dsh-client-ui-dockkit',
+    ]
+    const tsdown = read('tsdown.config.ts')
+    for (const mod of PLATFORM_MODULES) expect(tsdown).toContain(`\'${mod}\'`)
+  })
+
+  it('keeps minimumReleaseAgeExclude entries well-formed', () => {
+    // pnpm once auto-merged a bump into `@x@old || new` selectors, which are
+    // not valid exclude syntax — lock the shape so a bad merge fails loudly.
+    const workspace = read('pnpm-workspace.yaml')
+    const entries = [...workspace.matchAll(/^\s*- '([^']+)'\s*$/gm)].map(m => m[1])
+    expect(entries.length).toBeGreaterThan(0)
+    for (const entry of entries) {
+      expect(entry).not.toContain('||')
+      expect(entry.trim()).toBe(entry)
+      expect(entry).not.toMatch(/\s/)
+    }
+  })
+
   it('the manifest description never re-advertises a retired surface', () => {
     // The composer.dock stats band was removed in f26a4ef; the description
     // drifted for one release. Lock the replacement wording instead.

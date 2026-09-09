@@ -20,6 +20,7 @@ import type { DeepSeekMonitorKey } from './locales.ts'
 import { currencySymbol } from './balance-format.ts'
 import { DSM_PREFS_CHANGED_EVENT, fetchBalance, fetchPrefs, fetchStatus, fetchUsage, postCache, postPrefs, postToken } from './api.ts'
 import { CAPTURE_SCRIPT } from './capture-script.ts'
+import { MAX_MONTH_OFFSET, maxRowTokens, selectRowModels } from './usage-rows.ts'
 import type { MonitorPrefs, MonitorStatus, UsageModelSummary, UsageResult } from '../wire.ts'
 
 export interface ProviderPanelProps {
@@ -385,20 +386,10 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   // and the display falls back to the platform's billing default ¥.
   const costSymbol = balance !== null ? currencySymbol(balance.currency) : '¥'
 
-  // Derived month facts (DSM DashboardPanel fold). ONLY the retired legacy
-  // pair is filtered —every other model the platform reports renders (the
-  // current lineup is Flash / Flash Vision / Pro), zero usage included.
-  // Display order is fixed: Flash → Flash Vision → Pro → anything else.
-  const LEGACY_MODELS = new Set(['deepseek-chat', 'deepseek-reasoner', 'deepseek-chat & deepseek-reasoner'])
-  const ROW_ORDER = new Map([['flash', 0], ['flash-vision', 1], ['pro', 2]])
-  /** History-depth guard: the host routes reject year < 2020, so cap the
-   *  back-step at 5 years (60 months) — the ‹ button disables there. */
-  const MAX_MONTH_OFFSET = 60
-  const allModels = usage?.models ?? []
-  const rowModels: UsageModelSummary[] = allModels
-    .filter(m => !LEGACY_MODELS.has(m.name) && !LEGACY_MODELS.has(m.key))
-    .sort((a, b) => (ROW_ORDER.get(a.key) ?? 99) - (ROW_ORDER.get(b.key) ?? 99) || a.name.localeCompare(b.name))
-  const maxTokens = Math.max(...rowModels.map(m => m.totalTokens), 1)
+  // Derived month facts (DSM DashboardPanel fold): row selection lives in
+  // usage-rows.ts so the legacy filter + display order are unit-testable.
+  const rowModels: UsageModelSummary[] = selectRowModels(usage?.models ?? [])
+  const maxTokens = maxRowTokens(rowModels)
   // 「今日消耗」 only exists for the current month: the mini-card renders only
   // at monthOffset === 0, and when the platform serves no row for today the
   // card shows ¥0.00 — today's spend, not month-to-date, so an absent row
