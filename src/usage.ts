@@ -111,6 +111,12 @@ export function tokenBreakdown(usage: UsageEntry[]): { total: number, request: n
     // amounts. The per-entry value is an integer, so totals sum exactly.
     const value = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.round(parseAmountStrict(entry.amount))))
     switch (entry.type) {
+      // Each bucket is the LAST entry of its kind, not a running sum, and the
+      // kinds that feed `total` add per entry. That asymmetry is upstream's
+      // (DSM sums rounded entries), and the named buckets plus the total must
+      // stay on ONE tolerance: accumulating raw then rounding would let
+      // hit + miss + response drift away from the total the same payload
+      // produces.
       case 'REQUEST':
         request = value
         break

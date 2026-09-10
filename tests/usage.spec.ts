@@ -30,6 +30,16 @@ describe('tokenBreakdown (DSM token_breakdown)', () => {
       .toEqual({ total: 0, request: 0, hit: 0, miss: 0, response: 0 })
   })
 
+  it('keeps the last entry of a repeated kind, as upstream does', () => {
+    // Locked on purpose: the buckets are NOT running sums. If someone makes
+    // them accumulate, they must also change how `total` sums, or the two
+    // disagree on the same payload.
+    expect(tokenBreakdown([entry('REQUEST', '2'), entry('REQUEST', '3')]))
+      .toEqual({ total: 0, request: 3, hit: 0, miss: 0, response: 0 })
+    expect(tokenBreakdown([entry('RESPONSE_TOKEN', '4'), entry('RESPONSE_TOKEN', '1')]))
+      .toEqual({ total: 5, request: 0, hit: 0, miss: 0, response: 1 })
+  })
+
   it('treats unparsable and negative amounts as zero', () => {
     const usage = [
       entry('PROMPT_CACHE_HIT_TOKEN', 'abc'),

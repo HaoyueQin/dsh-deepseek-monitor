@@ -20,7 +20,7 @@ import type { DeepSeekMonitorKey } from './locales.ts'
 import { currencySymbol } from './balance-format.ts'
 import { DSM_PREFS_CHANGED_EVENT, fetchBalance, fetchPrefs, fetchStatus, fetchUsage, postCache, postPrefs, postToken } from './api.ts'
 import { CAPTURE_SCRIPT } from './capture-script.ts'
-import { MAX_MONTH_OFFSET, maxRowTokens, SEGMENT_ORDER, selectRowModels } from './usage-rows.ts'
+import { MAX_MONTH_OFFSET, maxRowTokens, selectRowModels } from './usage-rows.ts'
 import { tokenBreakdown } from '../usage.ts'
 import type { MonitorPrefs, MonitorStatus, UsageModelSummary, UsageResult } from '../wire.ts'
 

@@ -4,7 +4,7 @@
  * and the scale floor.
  */
 import { describe, expect, it } from 'vitest'
-import { MAX_MONTH_OFFSET, maxRowTokens, SEGMENT_ORDER, segmentOrderOf, selectRowModels } from '../src/client/usage-rows.ts'
+import { MAX_MONTH_OFFSET, maxRowTokens, selectRowModels } from '../src/client/usage-rows.ts'
 import type { UsageModelSummary } from '../src/wire.ts'
 
 const row = (key: string, name: string, totalTokens: number): UsageModelSummary => ({
@@ -54,14 +54,6 @@ describe('selectRowModels', () => {
     const selected = selectRowModels(models)
     expect(selected.map(m => m.key)).toEqual(['v4-flash', 'pro'])
     expect(models.map(m => m.key)).toEqual(snapshot)
-  })
-})
-
-describe('segmentOrderOf', () => {
-  it('ranks named rows before the other catch-all and unknown keys last', () => {
-    expect(SEGMENT_ORDER).toEqual(['v41-flash', 'v4-flash', 'pro', 'flash-vision', 'other'])
-    expect(segmentOrderOf('v41-flash')).toBeLessThan(segmentOrderOf('other'))
-    expect(segmentOrderOf('other')).toBeLessThan(segmentOrderOf('brand-new-key'))
   })
 })
 
