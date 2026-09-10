@@ -112,6 +112,12 @@ describe('manifest consistency', () => {
     // load a Node package.
     expect(pkg.peerDependencies?.['@deepseek-ai/dsh-storage-domain']).toBeDefined()
     expect(inject.has('@deepseek-ai/dsh-storage-domain')).toBe(false)
+    // A package here is NOT expected to appear in this plugin's imports:
+    // ui-renderer is the provider of the `slots` service and dsh-client-locale
+    // of `locale`, and a cordis SERVICE is consumed through the contract, not
+    // through an import. (Upstream calls these edges "informational".) Do not
+    // evict one just because `grep` finds no import for it.
+    expect(pkg.dsh?.client?.inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
   it('declares the 0.1.5-only kernel range in dsh.plugin.json engines', () => {
