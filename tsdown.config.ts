@@ -38,7 +38,7 @@ const NODE_BUILTINS = new Set([
 ])
 
 /** Module specifiers the web shell shares into the frozen module table
- *  (mirror of dsh-client-web's PLATFORM_MODULES on the 0.1.5-alpha.1
+ *  (mirror of dsh-client-web's PLATFORM_MODULES on the 0.1.5-rc.1
  *  baseline, which adds dsh-client-ui-dockkit). */
 const CLIENT_EXTERNALS = [
   'react',

@@ -5,12 +5,12 @@
  * 用量 button + expandable panel inside 设置→模型→DeepSeek).
  * No standalone settings section by design — monitoring lives in the row.
  */
-// DSH 0.1.5-alpha.1 baseline: ClientContext is the cordis Context; the
+// DSH 0.1.5-rc.1 baseline: ClientContext is the cordis Context; the
 // `slots` service lives on dsh-client-ui-renderer's SlotRegistry; the
 // sessionId merge lives on ui-session's SessionStandardProps. The faces below
-// are mirrored (never imported for values) exactly as 0.1.5-alpha.1 declares
-// them, so a type drift from upstream is caught here at build time against
-// the 0.1.5-alpha.1 dev baseline.
+// are mirrored (never imported for values) exactly as the 0.1.5 baseline
+// declares them, so a type drift from upstream is caught here at build time
+// against the 0.1.5-rc.1 dev baseline.
 import type { Context } from '@deepseek-ai/cordis'
 import type { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { BalanceChip } from './BalanceChip.tsx'
@@ -22,9 +22,9 @@ type ClientContext = Context
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
-    /** Slot registry service (ui-renderer's SlotRegistry on 0.1.5-alpha.1). */
+    /** Slot registry service (ui-renderer's SlotRegistry on 0.1.5-rc.1). */
     slots: SlotRegistry
-    /** Browser locale registry (locale's LocaleRuntime face, 0.1.5-alpha.1). */
+    /** Browser locale registry (locale's LocaleRuntime face, 0.1.5-rc.1). */
     locale: {
       register(ns: string, locale: string, dict: Record<string, string>): () => void
       getLocale(): { active: string }
@@ -35,15 +35,16 @@ declare module '@deepseek-ai/cordis' {
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface SlotMap {
-    /** ui-conversation's declaration on 0.1.5-alpha.1 (kind list / scope
-     *  session; no owner share). */
+    /** ui-conversation's declaration on 0.1.5-rc.1 (kind list / scope
+     *  session; no owner share; the slot key is unchanged from alpha.1 —
+     *  rc.1 only renamed the ROOT slot to `main.conversation`). */
     'conversation.input.right': {
       kind: 'list'
       scope: 'session'
     }
   }
   interface SessionStandardProps {
-    /** Framework-resolved current session id (ui-session merge on 0.1.5-alpha.1). */
+    /** Framework-resolved current session id (ui-session merge on 0.1.5-rc.1). */
     sessionId: string
   }
   interface LocaleNamespaceMap {
@@ -75,7 +76,7 @@ export function apply(ctx: ClientContext): void {
   }, BalanceChip))
 
   // The provider-row augmentation. The locale face (getLocale().active /
-  // subscribe) is exactly what the 0.1.5-alpha.1 LocaleRuntime exposes.
+  // subscribe) is exactly what the 0.1.5-rc.1 LocaleRuntime exposes.
   ctx.effect(() => {
     const dict = (): Record<string, string> => {
       const active = ctx.locale.getLocale().active

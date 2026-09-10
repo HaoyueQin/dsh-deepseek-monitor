@@ -69,9 +69,11 @@ describe('manifest consistency', () => {
     // [major, minor, patch] tuple — so the 0.1.5-alpha.x kernels need the
     // ^0.1.5-alpha.1 arm, which also covers 0.1.5 stable when it lands.
     // Older lines (0.1.2-rc.x / 0.1.3-alpha.x and earlier) are intentionally
-    // rejected: their users stay on this plugin's 0.1.5 release. Both
-    // devDependencies and the build baseline track the same 0.1.5-alpha.1
-    // floor.
+    // rejected: their users stay on this plugin's 0.1.5 release. The peer
+    // floor deliberately stays at alpha.1 while devDependencies and the build
+    // baseline track 0.1.5-rc.1: the floor is what ALPHA users may install
+    // against, and every 0.1.5 pre-release shares this tuple, so narrowing it
+    // to rc.1 would strand them for no gain.
     const PEER_RANGE = '^0.1.5-alpha.1'
     const names = [
       '@deepseek-ai/dsh-client-locale',
@@ -92,12 +94,14 @@ describe('manifest consistency', () => {
     // The README 版本兼容 section quotes engines.dsh as the support range;
     // lock it so the manifest and the docs cannot drift from the 0.1.5-only
     // support policy. (Declarative metadata: no host reads engines today.)
+    // The range is the SUPPORT floor, not the build baseline — the latter is
+    // package.json devDependencies, pinned to 0.1.5-rc.1.
     expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1')
   })
 
   it('keeps CLIENT_EXTERNALS covering the shell platform table', () => {
     // tsdown.config.ts mirrors the shell PLATFORM_MODULES from dsh-client-web
-    // (packages/client/web/src/platform.ts on the 0.1.5-alpha.1 baseline).
+    // (packages/client/web/src/platform.ts on the 0.1.5-rc.1 baseline).
     // A dropped entry silently inlines or trips the purity gate, so lock the
     // known-good set here; when the shell adds a module, mirror it there
     // and extend this list.

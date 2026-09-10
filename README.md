@@ -69,7 +69,7 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 ## 版本兼容
 
-- **仅支持 DeepSeek Harness 0.1.5 版本线**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.5-alpha.1`）。按 node-semver 规则，该范围覆盖 0.1.5-alpha.1 及之后的 0.1.5 pre-release 与 0.1.5 正式版；构建基线固定在 0.1.5-alpha.1（devDependencies），即按当前受支持 API 编译。
+- **仅支持 DeepSeek Harness 0.1.5 版本线**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.5-alpha.1`）。按 node-semver 规则，该范围覆盖 0.1.5-alpha.1 及之后的 0.1.5 pre-release 与 0.1.5 正式版；该地板值刻意保持在 alpha.1（alpha.x 内核同样受支持，收窄它没有收益）。构建基线固定在 0.1.5-rc.1（devDependencies），即按当前受支持内核的最新 pre-release 编译。
 - **旧版 DeepSeek Harness 用户**（0.1.2-rc.x / 0.1.3-alpha.x 及更早）：请安装本插件的**旧版本**（0.1.2/0.1.3 内核请用 [v0.1.5](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.5)，更早内核请用 [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)）。
 
 ## 开发

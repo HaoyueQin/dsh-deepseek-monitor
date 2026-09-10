@@ -59,6 +59,16 @@ const usageModelSchema = z.object({
 
 const usageDaySchema = z.object({
   date: z.string(),
+  // Row-keyed daily breakdown (models WITH a panel row). Optional so a month
+  // cached before this field existed still parses; the panel falls back to
+  // the legacy columns below in that case.
+  buckets: z.record(
+    z.string(),
+    z.object({ hit: z.number(), miss: z.number(), response: z.number() }),
+  ).optional(),
+  // Legacy per-model columns: no longer written, still accepted so rows
+  // persisted by earlier builds keep parsing (the domain stays a superset —
+  // no migration, no version bump).
   flashTokens: z.number(),
   flashCacheHit: z.number(),
   flashCacheMiss: z.number(),
@@ -85,7 +95,7 @@ const usageResultSchema = z.object({
   fetchedAt: z.number(),
 })
 
-// Resilience declaration (dsh 0.1.5-alpha.1 baseline; both fields are native
+// Resilience declaration (dsh 0.1.5-rc.1 baseline; both fields are native
 // to the DomainSpec since rc.1 — no version workaround needed):
 // - layout 'per-record': one version-stamped document per record, so the json
 //   backend (the base bundle's default route) exposes `backupRecord`. Its
