@@ -6,8 +6,8 @@
  * and legend, then token configuration and settings —while the CHROME stays
  * native to dsh: inline styles only, semantic tokens with fallbacks, host
  * font inheritance. Chart palette is DSM's own (hit green / miss orange /
- * response purple; flash blue / pro magenta), theme-aware via
- * prefers-color-scheme.
+ * response purple) and the per-row accents follow the model generations, all
+ * theme-aware via prefers-color-scheme.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -20,7 +20,8 @@ import type { DeepSeekMonitorKey } from './locales.ts'
 import { currencySymbol } from './balance-format.ts'
 import { DSM_PREFS_CHANGED_EVENT, fetchBalance, fetchPrefs, fetchStatus, fetchUsage, postCache, postPrefs, postToken } from './api.ts'
 import { CAPTURE_SCRIPT } from './capture-script.ts'
-import { MAX_MONTH_OFFSET, maxRowTokens, selectRowModels } from './usage-rows.ts'
+import { MAX_MONTH_OFFSET, maxRowTokens, SEGMENT_ORDER, selectRowModels } from './usage-rows.ts'
+import { tokenBreakdown } from '../usage.ts'
 import type { MonitorPrefs, MonitorStatus, UsageModelSummary, UsageResult } from '../wire.ts'
 
 export interface ProviderPanelProps {
@@ -82,22 +83,29 @@ export interface RowAccent {
   gradient: string
 }
 
-/** Per-model row accents (soft cool family around the brand blue). */
+/** Per-model row accents (soft cool family around the brand blue): the newer
+ *  V4.1 Flash reads brighter than the V4 Flash it supersedes, Pro keeps the
+ *  brand blue, and the experimental vision entry its own hue. */
 const ROW_ACCENTS: Record<string, RowAccent> = {
-  flash: {
+  'v41-flash': {
+    accent: '#3D8BFD',
+    badgeBg: 'rgba(61, 139, 253, 0.15)',
+    gradient: 'linear-gradient(90deg, #3D8BFD, #7FB8FF)',
+  },
+  'v4-flash': {
     accent: '#4DA6FF',
     badgeBg: 'rgba(77, 166, 255, 0.15)',
     gradient: 'linear-gradient(90deg, #4DA6FF, #8FC6FF)',
-  },
-  'flash-vision': {
-    accent: '#8F7DF0',
-    badgeBg: 'rgba(143, 125, 240, 0.15)',
-    gradient: 'linear-gradient(90deg, #8F7DF0, #C0B3FF)',
   },
   pro: {
     accent: BRAND_BLUE,
     badgeBg: BRAND_BLUE_TINT,
     gradient: 'linear-gradient(90deg, #4D6BFE, #8093FF)',
+  },
+  'flash-vision': {
+    accent: '#8F7DF0',
+    badgeBg: 'rgba(143, 125, 240, 0.15)',
+    gradient: 'linear-gradient(90deg, #8F7DF0, #C0B3FF)',
   },
 }
 
@@ -397,17 +405,27 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const today = monthOffset === 0 ? usage?.days.find(day => day.date === todayStr()) ?? null : null
   const monthTotal = usage?.days.reduce((sum, day) => sum + day.totalTokens, 0) ?? 0
 
-  // Chart points (DSM UsageChart fold): hit/miss/response summed across ALL
-  // models — flash/pro rows plus the other-model buckets, so a segment stack
-  // always fills the bar height its total implies.
-  const points = (usage?.days ?? []).map((day) => ({
-    date: day.date,
-    hit: day.flashCacheHit + day.proCacheHit + (day.otherCacheHit ?? 0),
-    miss: day.flashCacheMiss + day.proCacheMiss + (day.otherCacheMiss ?? 0),
-    response: day.flashResponse + day.proResponse + (day.otherResponse ?? 0),
-    total: day.totalTokens,
-    cost: day.totalCost,
-  }))
+  // Chart points (DSM UsageChart fold): every reported model's daily buckets
+  // merge into one hit/miss/response stack per day, so a segment stack always
+  // fills the bar height its total implies. New results carry `buckets`; a
+  // month cached by an earlier build still carries the three legacy columns
+  // instead, so those are rebuilt here rather than dropped.
+  const points = (usage?.days ?? []).map((day) => {
+    const buckets = day.buckets ?? {
+      'v41-flash': { hit: day.flashCacheHit, miss: day.flashCacheMiss, response: day.flashResponse },
+      pro: { hit: day.proCacheHit, miss: day.proCacheMiss, response: day.proResponse },
+      other: { hit: day.otherCacheHit ?? 0, miss: day.otherCacheMiss ?? 0, response: day.otherResponse ?? 0 },
+    }
+    let hit = 0
+    let miss = 0
+    let response = 0
+    for (const bucket of Object.values(buckets)) {
+      hit += bucket.hit
+      miss += bucket.miss
+      response += bucket.response
+    }
+    return { date: day.date, hit, miss, response, total: day.totalTokens, cost: day.totalCost }
+  })
   const maxVal = Math.max(...points.map(p => p.total), 1)
   const sumHit = points.reduce((s, p) => s + p.hit, 0)
   const sumMiss = points.reduce((s, p) => s + p.miss, 0)

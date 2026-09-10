@@ -1,9 +1,10 @@
 /**
  * Locks the provider-panel row fold: legacy filtering, display order, the
- * unknown-model graceful bucket, input immutability, and the scale floor.
+ * unknown-model graceful bucket, the chart segment order, input immutability,
+ * and the scale floor.
  */
 import { describe, expect, it } from 'vitest'
-import { MAX_MONTH_OFFSET, maxRowTokens, selectRowModels } from '../src/client/usage-rows.ts'
+import { MAX_MONTH_OFFSET, maxRowTokens, SEGMENT_ORDER, segmentOrderOf, selectRowModels } from '../src/client/usage-rows.ts'
 import type { UsageModelSummary } from '../src/wire.ts'
 
 const row = (key: string, name: string, totalTokens: number): UsageModelSummary => ({
@@ -23,34 +24,44 @@ describe('selectRowModels', () => {
       row('deepseek-chat', 'deepseek-chat', 10),
       row('deepseek-reasoner', 'deepseek-reasoner', 10),
       row('x', 'deepseek-chat & deepseek-reasoner', 10),
-      row('flash', 'deepseek-v4-flash', 5),
+      row('v4-flash', 'DeepSeek-V4-Flash', 5),
     ]
-    expect(selectRowModels(models).map(m => m.key)).toEqual(['flash'])
+    expect(selectRowModels(models).map(m => m.key)).toEqual(['v4-flash'])
   })
 
-  it('orders Flash, Flash Vision, Pro, then unknown keys by name', () => {
+  it('orders V4.1 Flash, V4 Flash, Pro, Flash Vision, then unknown keys by name', () => {
     const models = [
-      row('pro', 'deepseek-v4-pro', 1),
+      row('pro', 'DeepSeek-V4-Pro', 1),
       row('zeta', 'zeta-model', 1),
-      row('flash-vision', 'deepseek-v4-flash-vision-exp', 1),
+      row('flash-vision', 'DeepSeek-V4-Flash-Vision-Exp', 1),
       row('alpha', 'alpha-model', 1),
-      row('flash', 'deepseek-v4-flash', 1),
+      row('v4-flash', 'DeepSeek-V4-Flash', 1),
+      row('v41-flash', 'DeepSeek-V4.1-Flash', 1),
     ]
     expect(selectRowModels(models).map(m => m.key)).toEqual([
-      'flash',
-      'flash-vision',
+      'v41-flash',
+      'v4-flash',
       'pro',
+      'flash-vision',
       'alpha',
       'zeta',
     ])
   })
 
   it('keeps zero-usage rows and never mutates the input', () => {
-    const models = [row('pro', 'deepseek-v4-pro', 0), row('flash', 'deepseek-v4-flash', 7)]
+    const models = [row('pro', 'DeepSeek-V4-Pro', 0), row('v4-flash', 'DeepSeek-V4-Flash', 7)]
     const snapshot = models.map(m => m.key)
     const selected = selectRowModels(models)
-    expect(selected.map(m => m.key)).toEqual(['flash', 'pro'])
+    expect(selected.map(m => m.key)).toEqual(['v4-flash', 'pro'])
     expect(models.map(m => m.key)).toEqual(snapshot)
+  })
+})
+
+describe('segmentOrderOf', () => {
+  it('ranks named rows before the other catch-all and unknown keys last', () => {
+    expect(SEGMENT_ORDER).toEqual(['v41-flash', 'v4-flash', 'pro', 'flash-vision', 'other'])
+    expect(segmentOrderOf('v41-flash')).toBeLessThan(segmentOrderOf('other'))
+    expect(segmentOrderOf('other')).toBeLessThan(segmentOrderOf('brand-new-key'))
   })
 })
 

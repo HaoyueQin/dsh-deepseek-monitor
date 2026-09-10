@@ -4,7 +4,7 @@
  * Rust tests (deepseek.rs #[cfg(test)]) so the port cannot silently drift.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { costSum, createUsageService, tokenBreakdown } from '../src/usage.ts'
+import { BUCKETS_KEY, costSum, createUsageService, tokenBreakdown } from '../src/usage.ts'
 import { DsmError } from '../src/wire.ts'
 
 type Entry = { type?: string, amount?: string }
@@ -138,25 +138,47 @@ describe('createUsageService.fetch', () => {
     expect(result.month).toBe(8)
     // Full unknown models are kept (product decision), legacy names included.
     expect(result.models).toHaveLength(2)
-    const flash = result.models.find(m => m.name === 'deepseek-v4-flash')!
+    const flash = result.models.find(m => m.key === 'v4-flash')!
+    expect(flash.name).toBe('DeepSeek-V4-Flash')
     expect(flash.totalTokens).toBe(150)
     expect(flash.requestCount).toBe(0)
     expect(flash.cost).toBeCloseTo(1.5, 4)
     const vision = result.models.find(m => m.key === 'flash-vision')!
+    expect(vision.name).toBe('DeepSeek-V4-Flash-Vision-Exp')
     expect(vision.cost).toBeCloseTo(0.25, 4)
     expect(result.days).toHaveLength(1)
     expect(result.days[0]).toMatchObject({
       date: '2026-08-02',
-      flashTokens: 150,
-      flashCacheHit: 100,
-      flashResponse: 50,
       totalCost: 1.5,
+      buckets: { 'v4-flash': { hit: 100, miss: 0, response: 50 } },
     })
     expect(result.monthCost).toBeCloseTo(1.75, 4)
     expect(result.fetchedAt).toBeGreaterThan(0)
   })
 
-  it('folds unknown models into the other-* daily buckets', async () => {
+  it('skips the retired chat/reasoner rows without dropping their tokens', async () => {
+    credentials.resolve.mockResolvedValue({ value: 'tok', source: 'env' })
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(amountPayload(
+        [
+          { model: 'deepseek-chat & deepseek-reasoner', usage: [{ type: 'RESPONSE_TOKEN', amount: '9' }] },
+          { model: 'deepseek-v4-flash', usage: [{ type: 'RESPONSE_TOKEN', amount: '1' }] },
+        ],
+        [{ date: '2026-08-02', data: [{ model: 'deepseek-chat & deepseek-reasoner', usage: [{ type: 'RESPONSE_TOKEN', amount: '9' }] }] }],
+      )))
+      .mockResolvedValueOnce(jsonResponse(costPayload([], [])))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const service = createUsageService({ credentials } as never)
+    const result = await service.fetch(2026, 8)
+    // No row is advertised for the retired pair ...
+    expect(result.models.map(m => m.key)).toEqual(['v4-flash'])
+    // ... yet its tokens still reach the day total and the chart buckets.
+    expect(result.days[0].totalTokens).toBe(9)
+    expect(result.days[0].buckets).toEqual({ other: { hit: 0, miss: 0, response: 9 } })
+  })
+
+  it('folds ids with no panel row into the other bucket', async () => {
     credentials.resolve.mockResolvedValue({ value: 'tok', source: 'env' })
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(jsonResponse(amountPayload([], [
@@ -171,7 +193,68 @@ describe('createUsageService.fetch', () => {
 
     const service = createUsageService({ credentials } as never)
     const result = await service.fetch(2026, 8)
-    expect(result.days[0]).toMatchObject({ otherCacheHit: 3, otherCacheMiss: 4, otherResponse: 5, totalTokens: 12 })
+    // The vision exp HAS a row, so it lands under its own key — not "other".
+    expect(result.days[0].buckets).toEqual({ 'flash-vision': { hit: 3, miss: 4, response: 5 } })
+    expect(result.days[0].totalTokens).toBe(12)
+  })
+
+  it('pools the V4.1 Flash account-period ids into ONE row and ONE bucket', async () => {
+    credentials.resolve.mockResolvedValue({ value: 'tok', source: 'env' })
+    // The platform reports the same model under a dated id before it switches
+    // to the official one; splitting them would cut one model's usage in half.
+    const dated = 'deepseek-v4.1-flash-expires-on-0910'
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(amountPayload(
+        [
+          { model: dated, usage: [
+            { type: 'PROMPT_CACHE_HIT_TOKEN', amount: '1000' },
+            { type: 'RESPONSE_TOKEN', amount: '500' },
+          ] },
+          { model: 'deepseek-flash', usage: [{ type: 'PROMPT_CACHE_HIT_TOKEN', amount: '200' }] },
+        ],
+        [{ date: '2026-08-02', data: [
+          { model: dated, usage: [{ type: 'PROMPT_CACHE_HIT_TOKEN', amount: '1000' }] },
+          { model: 'deepseek-flash', usage: [{ type: 'PROMPT_CACHE_HIT_TOKEN', amount: '200' }] },
+        ] }],
+      )))
+      .mockResolvedValueOnce(jsonResponse(costPayload([
+        { model: dated, usage: [{ type: 'RESPONSE_TOKEN', amount: '2.5' }] },
+        { model: 'deepseek-flash', usage: [{ type: 'RESPONSE_TOKEN', amount: '0.5' }] },
+      ], [])))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const service = createUsageService({ credentials } as never)
+    const result = await service.fetch(2026, 8)
+    // ONE row for the model, even though the platform reported it twice.
+    expect(result.models).toHaveLength(1)
+    expect(result.models[0]).toMatchObject({
+      key: 'v41-flash',
+      name: 'DeepSeek-V4.1-Flash',
+      totalTokens: 1700,
+      cost: 3,
+    })
+    // Both ids fold into the same daily bucket instead of one falling to other.
+    expect(result.days[0].buckets).toEqual({ 'v41-flash': { hit: 1200, miss: 0, response: 0 } })
+  })
+
+  it('books an unrecognised platform id under the other bucket', async () => {
+    credentials.resolve.mockResolvedValue({ value: 'tok', source: 'env' })
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(amountPayload([], [
+        { date: '2026-08-02', data: [{ model: 'deepseek-v5-not-in-this-build', usage: [
+          { type: 'PROMPT_CACHE_HIT_TOKEN', amount: '3' },
+          { type: 'RESPONSE_TOKEN', amount: '5' },
+        ] }] },
+      ])))
+      .mockResolvedValueOnce(jsonResponse(costPayload([], [])))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const service = createUsageService({ credentials } as never)
+    const result = await service.fetch(2026, 8)
+    // A model newer than this build keeps its tokens in the chart's total
+    // rather than vanishing from it (BUCKETS_KEY is the shared catch-all key).
+    expect(result.days[0].buckets).toEqual({ [BUCKETS_KEY]: { hit: 3, miss: 0, response: 5 } })
+    expect(result.days[0].totalTokens).toBe(8)
   })
 
   it('classifies 401 / 429 / 5xx platform failures', async () => {

@@ -10,20 +10,37 @@
  */
 import type { UsageModelSummary } from '../wire.ts'
 
-/** Retired model ids the panel never renders (matched on name or key). */
+/** Retired model ids the panel never renders (matched on name or key). The
+ *  host already skips these while building the row list, so this guards the
+ *  other direction: rows folded into a month cache by an older build, and the
+ *  raw-id fallback row an unrecognised model gets. */
 export const LEGACY_MODELS: ReadonlySet<string> = new Set([
   'deepseek-chat',
   'deepseek-reasoner',
   'deepseek-chat & deepseek-reasoner',
 ])
 
-/** Display order by row key: Flash → Flash Vision → Pro; anything else sorts
- *  after Pro by name. */
+/** Display order by row key: V4.1 Flash → V4 Flash → Pro → Flash Vision;
+ *  anything else sorts after Vision by name. The vision entry sits last on
+ *  purpose — it is the experimental sibling of the Flash line, and grouping
+ *  the two production Flash rows first keeps the accounting rows adjacent. */
 export const ROW_ORDER: ReadonlyMap<string, number> = new Map([
-  ['flash', 0],
-  ['flash-vision', 1],
+  ['v41-flash', 0],
+  ['v4-flash', 1],
   ['pro', 2],
+  ['flash-vision', 3],
 ])
+
+/** Stacking/colour order of one day's buckets. `other` trails on purpose: it
+ *  is the catch-all for ids without a row, so it must never displace a named
+ *  model's colour. Unknown keys sort after those, by name. */
+export const SEGMENT_ORDER: ReadonlyArray<string> = ['v41-flash', 'v4-flash', 'pro', 'flash-vision', 'other']
+
+/** Bit index of a bucket key in the chart legend/colour map. */
+export function segmentOrderOf(key: string): number {
+  const idx = SEGMENT_ORDER.indexOf(key)
+  return idx === -1 ? SEGMENT_ORDER.length : idx
+}
 
 /** History-depth guard: the host routes reject year < 2020, so the back-step
  *  caps at 5 years (60 months) — the ‹ button disables there. */

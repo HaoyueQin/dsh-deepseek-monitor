@@ -84,6 +84,17 @@ export interface UsageModelSummary {
 /** One day's per-model usage within a month. */
 export interface UsageDaySummary {
   date: string
+  /** Daily breakdown AS REPORTED (row key → buckets). A row key is a panel
+   *  row ('v41-flash', 'v4-flash', 'pro', 'flash-vision'), or 'other' for a
+   *  platform id with no row. Consumers must tolerate absent keys and absent
+   *  `buckets` (see the legacy fallback below) — a month cached by an earlier
+   *  build carries no buckets at all. */
+  buckets?: Record<string, { hit: number, miss: number, response: number }>
+  /** Legacy per-model columns, retired in favour of `buckets` but kept in the
+   *  wire + storage contract so months cached by earlier builds still parse
+   *  (the domain schema is a superset on purpose — no migration). New results
+   *  carry zeros here, and the panel rebuilds buckets from these fields for a
+   *  legacy row it reads back. */
   flashTokens: number
   flashCacheHit: number
   flashCacheMiss: number
@@ -92,10 +103,7 @@ export interface UsageDaySummary {
   proCacheHit: number
   proCacheMiss: number
   proResponse: number
-  /** Every OTHER model the platform reports (e.g. the vision exp): tokens
-   *  land in totalTokens but no dedicated row, so the daily chart folds them
-   *  here to keep its stacked segments equal to the bar height. Absent on
-   *  rows persisted before this field existed. */
+  /** Legacy catch-all for models without a dedicated row. */
   otherCacheHit?: number
   otherCacheMiss?: number
   otherResponse?: number

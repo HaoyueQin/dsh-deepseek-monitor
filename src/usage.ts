@@ -5,6 +5,13 @@
  * TypeScript port of DeepSeekMonitorWindows' do_fetch_usage +
  * token_breakdown + cost_sum (deepseek.rs), including the tolerant parsing
  * rules (unknown entry kinds ignored; unparsable amounts count as zero).
+ *
+ * WHICH platform ids become panel rows is a product decision, not a platform
+ * fact: the platform reports ids for models that never had a row here (the
+ * retired chat/reasoner pair) and ids that are NOT aliases of each other (V4
+ * Flash and V4.1 Flash are two generations, so they stay two rows). One model
+ * split across account-period ids — the dated V4.1 Flash id and
+ * `deepseek-flash` — still pools into ONE row; see MODEL_LABELS.
  */
 
 import type { DsmCredentials } from './context-types.ts'
@@ -14,13 +21,56 @@ import { PLATFORM_REQUEST_HEADERS, PLATFORM_TOKEN_REF, TIMEOUT_MS, USAGE_AMOUNT_
 
 const COST_URL = 'https://platform.deepseek.com/api/v0/usage/cost'
 
-/** Model display labels: full platform ids as names (per product decision);
- *  unknown ids keep their raw id. */
-const MODEL_LABELS: Record<string, { key: string, name: string }> = {
-  'deepseek-v4-flash': { key: 'flash', name: 'deepseek-v4-flash' },
-  'deepseek-v4-pro': { key: 'pro', name: 'deepseek-v4-pro' },
-  'deepseek-v4-flash-vision-exp': { key: 'flash-vision', name: 'deepseek-v4-flash-vision-exp' },
+/** One panel row: its stable key plus the name the panel renders. */
+export interface RowLabel {
+  key: string
+  /** Shown in the panel. Official PRODUCT name per user decision — map any
+   *  official id by its documented model version (official docs:
+   *  deepseek-flash = DeepSeek-V4.1-Flash, deepseek-v4-pro =
+   *  DeepSeek-V4-Pro-0813), NOT by the platform's internal id spelling. */
+  name: string
 }
+
+/** Platform model id → panel row. Several ids may share one row: the
+ *  platform splits ONE model across account-period ids, and rendering them as
+ *  two rows would cut that model's usage in half (the panel shows both totals
+ *  and each one would read short). */
+const MODEL_LABELS: Record<string, RowLabel> = {
+  'deepseek-v4.1-flash-expires-on-0910': { key: 'v41-flash', name: 'DeepSeek-V4.1-Flash' },
+  'deepseek-flash': { key: 'v41-flash', name: 'DeepSeek-V4.1-Flash' },
+  'deepseek-v4-flash': { key: 'v4-flash', name: 'DeepSeek-V4-Flash' },
+  'deepseek-v4-pro': { key: 'pro', name: 'DeepSeek-V4-Pro' },
+  'deepseek-v4-flash-vision-exp': { key: 'flash-vision', name: 'DeepSeek-V4-Flash-Vision-Exp' },
+}
+
+/** Retired platform ids mapped onto the live row they belong to for bucket
+ *  accounting (a dated id whose model was later renamed). */
+const LEGACY_ID_ALIASES: Record<string, RowLabel> = {
+  'deepseek-v4-flash-0731': { key: 'v4-flash', name: 'DeepSeek-V4-Flash' },
+  'deepseek-v4-pro-0813': { key: 'pro', name: 'DeepSeek-V4-Pro' },
+}
+
+/** Platform ids that get NEITHER a panel row NOR a bucket of their own: the
+ *  retired chat/reasoner pair, reported only for historical months. Their
+ *  tokens and cost still reach the month total and the chart — they simply
+ *  have no identity in this UI, so they land under {@link BUCKETS_KEY}.
+ *  Kept explicit rather than left to the unknown-id path so the retirement is
+ *  a recorded decision: drop an id here the day the panel wants its row. */
+const NO_ROW_MODEL_IDS: ReadonlySet<string> = new Set([
+  'deepseek-chat',
+  'deepseek-reasoner',
+  'deepseek-chat & deepseek-reasoner',
+])
+
+/** Panel row for one platform id; undefined = no dedicated row (the daily
+ *  chart still books its tokens under the "other" bucket). */
+const rowLabelOf = (id: string | undefined): RowLabel | undefined =>
+  id === undefined || NO_ROW_MODEL_IDS.has(id)
+    ? undefined
+    : MODEL_LABELS[id] ?? LEGACY_ID_ALIASES[id]
+
+/** Daily bucket for models the panel has no row for. */
+export const BUCKETS_KEY = 'other'
 
 interface UsageEntry {
   type?: string
@@ -139,27 +189,48 @@ export function createUsageService(deps: UsageDeps): {
       const amountBiz = amount.data?.biz_data
       const costTotal = cost.data?.biz_data?.[0]
 
-      const costForModel = (model: string): number => {
-        const block = costTotal?.total?.find(item => item.model === model)
-        return block?.usage !== undefined ? costSum(block.usage) : 0
+      // Screen rows aggregate by PANEL ROW, not by platform id: one model
+      // reported under two account-period ids must read as one row, or its
+      // tokens and cost are split across two rows that each look short.
+      const costByRow = new Map<string, number>()
+      for (const block of costTotal?.total ?? []) {
+        if (block.model === undefined) continue
+        const key = rowLabelOf(block.model)?.key ?? block.model
+        costByRow.set(key, (costByRow.get(key) ?? 0) + costSum(block.usage ?? []))
       }
 
-      const models: UsageModelSummary[] = []
+      const byKey = new Map<string, UsageModelSummary>()
       for (const block of amountBiz?.total ?? []) {
         if (block.model === undefined) continue
-        const label = MODEL_LABELS[block.model] ?? { key: block.model, name: block.model }
+        // A retired id the platform still reports keeps its tokens in the
+        // daily buckets (and the month total) but gets no row of its own.
+        if (NO_ROW_MODEL_IDS.has(block.model)) continue
+        const label = rowLabelOf(block.model) ?? { key: block.model, name: block.model }
         const breakdown = tokenBreakdown(block.usage ?? [])
-        models.push({
-          key: label.key,
-          name: label.name,
-          totalTokens: breakdown.total,
-          requestCount: breakdown.request,
-          cacheHitTokens: breakdown.hit,
-          cacheMissTokens: breakdown.miss,
-          responseTokens: breakdown.response,
-          cost: Number.parseFloat(costForModel(block.model).toFixed(4)),
-        })
+        const cost = costByRow.get(label.key) ?? 0
+        const existing = byKey.get(label.key)
+        if (existing === undefined) {
+          byKey.set(label.key, {
+            key: label.key,
+            name: label.name,
+            totalTokens: breakdown.total,
+            requestCount: breakdown.request,
+            cacheHitTokens: breakdown.hit,
+            cacheMissTokens: breakdown.miss,
+            responseTokens: breakdown.response,
+            cost: Number.parseFloat(cost.toFixed(4)),
+          })
+          continue
+        }
+        existing.totalTokens += breakdown.total
+        existing.requestCount += breakdown.request
+        existing.cacheHitTokens += breakdown.hit
+        existing.cacheMissTokens += breakdown.miss
+        existing.responseTokens += breakdown.response
+        // `cost` is already pooled per row above, so it is NOT summed again
+        // here — doing both double-counts a two-id row.
       }
+      const models: UsageModelSummary[] = [...byKey.values()]
 
       const costByDate = new Map<string, number>()
       for (const day of costTotal?.days ?? []) {
@@ -174,30 +245,26 @@ export function createUsageService(deps: UsageDeps): {
           date: day.date,
           flashTokens: 0, flashCacheHit: 0, flashCacheMiss: 0, flashResponse: 0,
           proTokens: 0, proCacheHit: 0, proCacheMiss: 0, proResponse: 0,
+          buckets: {},
           totalTokens: 0,
           totalCost: Number.parseFloat((costByDate.get(day.date) ?? 0).toFixed(4)),
         }
         for (const block of day.data ?? []) {
           const b = tokenBreakdown(block.usage ?? [])
           summary.totalTokens += b.total
-          if (block.model === 'deepseek-v4-flash') {
-            summary.flashTokens += b.total
-            summary.flashCacheHit += b.hit
-            summary.flashCacheMiss += b.miss
-            summary.flashResponse += b.response
-          } else if (block.model === 'deepseek-v4-pro') {
-            summary.proTokens += b.total
-            summary.proCacheHit += b.hit
-            summary.proCacheMiss += b.miss
-            summary.proResponse += b.response
-          } else {
-            // Any other model (vision exp, future ids): no dedicated row, but
-            // its buckets must reach the daily chart or the stacked segments
-            // fall short of the bar height the total implies.
-            summary.otherCacheHit = (summary.otherCacheHit ?? 0) + b.hit
-            summary.otherCacheMiss = (summary.otherCacheMiss ?? 0) + b.miss
-            summary.otherResponse = (summary.otherResponse ?? 0) + b.response
-          }
+          // Every known id lands under its OWN panel row, so a model split
+          // across two platform ids (the V4.1 Flash account-period pair)
+          // pools into one daily bucket. An id with no row — a retired one
+          // the platform still reports, or one newer than this build — falls
+          // into "other" rather than vanishing: its tokens MUST still reach
+          // the chart or the stacked segments fall short of the bar height
+          // the total implies.
+          const bucketKey = rowLabelOf(block.model)?.key ?? BUCKETS_KEY
+          const bucket = summary.buckets![bucketKey] ?? { hit: 0, miss: 0, response: 0 }
+          bucket.hit += b.hit
+          bucket.miss += b.miss
+          bucket.response += b.response
+          summary.buckets![bucketKey] = bucket
         }
         days.push(summary)
       }
