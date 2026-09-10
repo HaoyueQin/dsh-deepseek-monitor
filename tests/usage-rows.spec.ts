@@ -1,7 +1,7 @@
 /**
  * Locks the provider-panel row fold: legacy filtering, display order, the
- * unknown-model graceful bucket, the chart segment order, input immutability,
- * and the scale floor.
+ * unknown-model graceful bucket, input immutability, and the scale floor.
+ * (The chart's bar math lives in tests/chart-fold.spec.ts.)
  */
 import { describe, expect, it } from 'vitest'
 import { MAX_MONTH_OFFSET, maxRowTokens, selectRowModels } from '../src/client/usage-rows.ts'

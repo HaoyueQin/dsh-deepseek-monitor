@@ -103,7 +103,13 @@ function clientBundle(pluginId: string, entryFile: string): UserConfig {
     dts: false,
     sourcemap: true,
     clean: false,
-    external: [...CLIENT_EXTERNALS],
+    deps: {
+      // Platform modules stay external (the shell's module table owns them)
+      // while everything else is inlined; the purity gate below enforces the
+      // same split at resolve time.
+      neverBundle: [...CLIENT_EXTERNALS],
+      alwaysBundle: (id: string) => !CLIENT_EXTERNALS.includes(id),
+    },
     define: {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'production'),
       'import.meta.env.MODE': JSON.stringify(process.env.NODE_ENV ?? 'production'),
@@ -115,7 +121,6 @@ function clientBundle(pluginId: string, entryFile: string): UserConfig {
         conditionNames: ['browser', 'import', 'require', 'default'],
       },
     },
-    noExternal: (id: string) => (CLIENT_EXTERNALS.includes(id) ? undefined : true),
     plugins: [purityGatePlugin(), makeCssPlugin(pluginId)],
     outputOptions: {
       entryFileNames: entryFile,

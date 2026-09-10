@@ -1,15 +1,20 @@
 # pnpm 11's supply-chain release-age gate rolls just-released versions back
-# on re-resolution. These selectors exempt the @deepseek-ai set this plugin
-# resolves — direct devDeps plus the transitive storage peers that once
-# rolled back to an older kernel. Relevant only inside the freshness window
-# right after a kernel bump; aged releases resolve fine without them.
+# on re-resolution. Exempt the @deepseek-ai set this plugin resolves — the six
+# direct devDeps plus the two transitive storage peers that once rolled back to
+# an older kernel — plus cordis itself.
+#
+# Version-less on purpose: naming a version here means re-editing this file on
+# every kernel bump, and a stale pin still exempts whatever the gate is about
+# to roll back. The gate's job is to hold back arbitrary fresh releases; within
+# this one scoped namespace the devDeps pins in package.json are what actually
+# decide the version, so an unpinned exemption cannot widen the resolved set.
 minimumReleaseAgeExclude:
-  - '@deepseek-ai/cordis@4.0.2'
-  - '@deepseek-ai/dsh-client-locale@0.1.5-rc.1'
-  - '@deepseek-ai/dsh-client-ui-conversation@0.1.5-rc.1'
-  - '@deepseek-ai/dsh-client-ui-renderer@0.1.5-rc.1'
-  - '@deepseek-ai/dsh-client-ui-settings@0.1.5-rc.1'
-  - '@deepseek-ai/dsh-client-ui-slots@0.1.5-rc.1'
-  - '@deepseek-ai/dsh-invariants@0.1.5-rc.1'
-  - '@deepseek-ai/dsh-storage-domain@0.1.5-rc.1'
-  - '@deepseek-ai/dsh-storage@0.1.5-rc.1'
+  - '@deepseek-ai/cordis'
+  - '@deepseek-ai/dsh-client-locale'
+  - '@deepseek-ai/dsh-client-ui-conversation'
+  - '@deepseek-ai/dsh-client-ui-renderer'
+  - '@deepseek-ai/dsh-client-ui-settings'
+  - '@deepseek-ai/dsh-client-ui-slots'
+  - '@deepseek-ai/dsh-invariants'
+  - '@deepseek-ai/dsh-storage'
+  - '@deepseek-ai/dsh-storage-domain'

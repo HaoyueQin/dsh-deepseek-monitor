@@ -43,6 +43,11 @@ const MODEL_LABELS: Record<string, RowLabel> = {
   'deepseek-v4-flash-vision-exp': { key: 'flash-vision', name: 'DeepSeek-V4-Flash-Vision-Exp' },
 }
 
+/** Daily bucket for platform ids with no panel row — retired models and ids
+ *  newer than this build. Defined above its uses so the doc links below
+ *  resolve in review order as well as at build time. */
+export const BUCKETS_KEY = 'other'
+
 /** Retired platform ids mapped onto the live row they belong to for bucket
  *  accounting (a dated id whose model was later renamed). */
 const LEGACY_ID_ALIASES: Record<string, RowLabel> = {
@@ -54,8 +59,10 @@ const LEGACY_ID_ALIASES: Record<string, RowLabel> = {
  *  retired chat/reasoner pair, reported only for historical months. Their
  *  tokens and cost still reach the month total and the chart — they simply
  *  have no identity in this UI, so they land under {@link BUCKETS_KEY}.
- *  Kept explicit rather than left to the unknown-id path so the retirement is
- *  a recorded decision: drop an id here the day the panel wants its row. */
+ *  Deliberately mirrored by the panel's LEGACY_MODELS set: this side keeps a
+ *  fresh month from advertising a row that never renders, and the client side
+ *  hides the same ids in a month folded by an earlier build. Change one, and
+ *  check the other (tests/usage-rows.spec.ts locks the client half). */
 const NO_ROW_MODEL_IDS: ReadonlySet<string> = new Set([
   'deepseek-chat',
   'deepseek-reasoner',
@@ -63,14 +70,11 @@ const NO_ROW_MODEL_IDS: ReadonlySet<string> = new Set([
 ])
 
 /** Panel row for one platform id; undefined = no dedicated row (the daily
- *  chart still books its tokens under the "other" bucket). */
+ *  chart books its tokens under {@link BUCKETS_KEY} instead). */
 const rowLabelOf = (id: string | undefined): RowLabel | undefined =>
   id === undefined || NO_ROW_MODEL_IDS.has(id)
     ? undefined
     : MODEL_LABELS[id] ?? LEGACY_ID_ALIASES[id]
-
-/** Daily bucket for models the panel has no row for. */
-export const BUCKETS_KEY = 'other'
 
 interface UsageEntry {
   type?: string

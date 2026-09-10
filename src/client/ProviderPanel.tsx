@@ -20,6 +20,7 @@ import type { DeepSeekMonitorKey } from './locales.ts'
 import { currencySymbol } from './balance-format.ts'
 import { DSM_PREFS_CHANGED_EVENT, fetchBalance, fetchPrefs, fetchStatus, fetchUsage, postCache, postPrefs, postToken } from './api.ts'
 import { CAPTURE_SCRIPT } from './capture-script.ts'
+import { foldChartPoints } from './chart-fold.ts'
 import { MAX_MONTH_OFFSET, maxRowTokens, selectRowModels } from './usage-rows.ts'
 import { tokenBreakdown } from '../usage.ts'
 import type { MonitorPrefs, MonitorStatus, UsageModelSummary, UsageResult } from '../wire.ts'
@@ -405,27 +406,9 @@ export function ProviderPanel({ d }: ProviderPanelProps): ReactNode {
   const today = monthOffset === 0 ? usage?.days.find(day => day.date === todayStr()) ?? null : null
   const monthTotal = usage?.days.reduce((sum, day) => sum + day.totalTokens, 0) ?? 0
 
-  // Chart points (DSM UsageChart fold): every reported model's daily buckets
-  // merge into one hit/miss/response stack per day, so a segment stack always
-  // fills the bar height its total implies. New results carry `buckets`; a
-  // month cached by an earlier build still carries the three legacy columns
-  // instead, so those are rebuilt here rather than dropped.
-  const points = (usage?.days ?? []).map((day) => {
-    const buckets = day.buckets ?? {
-      'v41-flash': { hit: day.flashCacheHit, miss: day.flashCacheMiss, response: day.flashResponse },
-      pro: { hit: day.proCacheHit, miss: day.proCacheMiss, response: day.proResponse },
-      other: { hit: day.otherCacheHit ?? 0, miss: day.otherCacheMiss ?? 0, response: day.otherResponse ?? 0 },
-    }
-    let hit = 0
-    let miss = 0
-    let response = 0
-    for (const bucket of Object.values(buckets)) {
-      hit += bucket.hit
-      miss += bucket.miss
-      response += bucket.response
-    }
-    return { date: day.date, hit, miss, response, total: day.totalTokens, cost: day.totalCost }
-  })
+  // Chart points: the pure fold lives in chart-fold.ts (unit-tested) so this
+  // component only feeds it data and renders the result.
+  const points = foldChartPoints(usage?.days ?? [])
   const maxVal = Math.max(...points.map(p => p.total), 1)
   const sumHit = points.reduce((s, p) => s + p.hit, 0)
   const sumMiss = points.reduce((s, p) => s + p.miss, 0)
