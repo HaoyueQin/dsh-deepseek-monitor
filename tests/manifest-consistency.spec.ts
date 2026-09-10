@@ -90,6 +90,30 @@ describe('manifest consistency', () => {
     expect(pkg.peerDependencies?.['@deepseek-ai/cordis']).toBe('^4.0.1')
   })
 
+  it('marks every client package the shell must load as an inject entry', () => {
+    // dsh.client.inject is the browser-side dependency list: the shell loads
+    // each entry before this plugin's client bundle runs. Every CLIENT half
+    // belongs there...
+    const CLIENT_PACKAGES = [
+      '@deepseek-ai/dsh-client-locale',
+      '@deepseek-ai/dsh-client-ui-conversation',
+      '@deepseek-ai/dsh-client-ui-renderer',
+      '@deepseek-ai/dsh-client-ui-settings',
+      '@deepseek-ai/dsh-client-ui-slots',
+    ]
+    const inject = new Set(pkg.dsh?.client?.inject ?? [])
+    for (const name of CLIENT_PACKAGES) {
+      expect(inject.has(name)).toBe(true)
+      expect(pkg.peerDependencies?.[name]).toBeDefined()
+    }
+    // ...while a HOST service stays out of it. @deepseek-ai/dsh-storage-domain
+    // is the one peer the client half never touches: it resolves host-side and
+    // publishes no `./client` export, so injecting it would ask the browser to
+    // load a Node package.
+    expect(pkg.peerDependencies?.['@deepseek-ai/dsh-storage-domain']).toBeDefined()
+    expect(inject.has('@deepseek-ai/dsh-storage-domain')).toBe(false)
+  })
+
   it('declares the 0.1.5-only kernel range in dsh.plugin.json engines', () => {
     // The README 版本兼容 section quotes engines.dsh as the support range;
     // lock it so the manifest and the docs cannot drift from the 0.1.5-only

@@ -38,8 +38,8 @@ DeepSeek Harness（dsh）Web 插件：把 [DeepSeekMonitorWindows](https://githu
 - **余额 chip**：模型名称旁实时显示余额（按币种渲染符号，如 ¥/$），低于阈值变红
 - **展开面板**（点击按钮在卡片容器内展开）：
   - **账户余额**：官方 `GET /user/balance` API，复用 dsh 已配置的密钥；今日消耗 / 本月费用 mini 格（按账户币种渲染，无余额快照时回退 ¥）；低余额警示
-  - **模型用量行**：固定顺序 Flash → Vision → Pro，平台全称显示、lucide SVG 图标（闪电 / 照片 / 大脑）、独立柔和配色（天蓝 / 雾紫 / 品牌蓝）、进度条 + 缓存命中率 + 费用，行高恒定
-  - **每日堆叠柱状图**：DSM 原版配色（命中绿 / 未命中橙 / 输出紫），月份切换，稀疏日期标注保证不重叠，自绘悬浮卡（悬停查看明细）
+  - **模型用量行**：平台返回的模型 id 各自成行，显示**官方产品名**（DeepSeek-V4.1-Flash / V4-Flash / V4-Pro / V4-Flash-Vision-Exp），顺序 V4.1 Flash → V4 Flash → Pro → Vision；lucide SVG 图标（闪电 / 照片 / 大脑）、独立柔和配色、进度条 + 缓存命中率 + 费用，行高恒定。同一模型的多个账期 id（如 V4.1 Flash 的到期 id 与正式 id）**合并为一行**，因此行内数字与平台账单逐项对得上
+  - **每日堆叠柱状图**：DSM 原版配色（命中绿 / 未命中橙 / 输出紫），逐行分桶（未单列行的模型 id 归入「其他」桶，因此柱高始终等于当日总量）、月份切换，稀疏日期标注保证不重叠，自绘悬浮卡（悬停查看明细）
   - **平台 Token 配置**：双通道获取——①一键复制控制台抓取脚本（登录平台页粘贴回车即捕获）；②手动 F12 粘贴。保存前先经平台接口验活，凭据只写不读回
   - **设置**：输入框余额显示开关、自动刷新开关与间隔（≥60s）、低余额提醒与阈值、重载缓存 / 清除缓存
 
@@ -71,6 +71,7 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 - **仅支持 DeepSeek Harness 0.1.5 版本线**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.5-alpha.1`）。按 node-semver 规则，该范围覆盖 0.1.5-alpha.1 及之后的 0.1.5 pre-release 与 0.1.5 正式版；该地板值刻意保持在 alpha.1（alpha.x 内核同样受支持，收窄它没有收益）。构建基线固定在 0.1.5-rc.1（devDependencies），即按当前受支持内核的最新 pre-release 编译。
 - **旧版 DeepSeek Harness 用户**（0.1.2-rc.x / 0.1.3-alpha.x 及更早）：请安装本插件的**旧版本**（0.1.2/0.1.3 内核请用 [v0.1.5](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.5)，更早内核请用 [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)）。
+- **模型行口径不随 dsh 内核版本变化**：面板的行只由平台用量接口返回的模型 id 决定。平台把一个模型的多个账期 id 映射到同一行（例如 V4.1 Flash 的到期 id 与 `deepseek-flash` 合并），把已退役的 id 排除在行外（其用量仍计入总额与图表），未识别的 id 则原样成行 —— 因此升级 dsh 不会改写你看到的历史账单口径。
 
 ## 开发
 

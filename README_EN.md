@@ -38,8 +38,8 @@ A DeepSeek Harness (dsh) web plugin that ports the **balance & usage monitoring*
 - **Balance chip**: live balance next to the model name, rendered with the currency's symbol (¥/$/…); turns red below the threshold
 - **Expanded panel**:
   - **Account balance**: official `GET /user/balance` API reusing the key already configured in dsh; today / month-to-date mini metrics (rendered in the account currency, falling back to ¥ without a balance snapshot); low-balance warning
-  - **Per-model usage rows**: fixed order Flash → Vision → Pro, full platform ids, lucide SVG icons (bolt / image / brain), per-model soft accents (sky / lavender / brand blue), progress bar + cache-hit rate + cost, constant row height
-  - **Daily stacked chart**: DSM's own palette (hit green / miss orange / response purple), month navigation, sparse date labels that never collide, custom styled hover cards
+  - **Per-model usage rows**: one row per model id the platform reports, carrying the **official product name** (DeepSeek-V4.1-Flash / V4-Flash / V4-Pro / V4-Flash-Vision-Exp), ordered V4.1 Flash → V4 Flash → Pro → Vision; lucide SVG icons (bolt / image / brain), per-model soft accents, progress bar + cache-hit rate + cost, constant row height. Several account-period ids of ONE model (V4.1 Flash's dated id and its live id) **fold into a single row**, so the numbers reconcile against the platform bill line by line
+  - **Daily stacked chart**: DSM's own palette (hit green / miss orange / response purple), row-keyed buckets (a model id without its own row falls into "other", so a bar always equals that day's total), month navigation, sparse date labels that never collide, custom styled hover cards
   - **Platform token setup**: two acquisition channels — ① one-click console capture script (paste on the signed-in platform page, token pops up); ② manual paste via DevTools. Verified against the platform API before being stored write-only
   - **Settings**: composer balance display switch, auto-refresh toggle & interval (≥60s), low-balance alert & threshold, reload / clear cache
 
@@ -71,6 +71,7 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 - **Requires DeepSeek Harness on the 0.1.5 line only** (declared via `dsh.plugin.json` `engines.dsh`; peer range `^0.1.5-alpha.1`). Per node-semver rules the range covers 0.1.5-alpha.1 and later 0.1.5 pre-releases, plus 0.1.5 stable when it lands; that floor deliberately stays at alpha.1 (alpha.x kernels are supported too, so narrowing it buys nothing). The build baseline is pinned to 0.1.5-rc.1 (devDependencies) — compiling against the newest pre-release of the supported kernel line.
 - **Users on older DeepSeek Harness** (0.1.2-rc.x / 0.1.3-alpha.x and earlier): install an **earlier release of this plugin** (use [v0.1.5](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.5) for the 0.1.2/0.1.3 kernels, [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4) for even older ones).
+- **Model rows do not follow the dsh kernel version**: which rows the panel shows is decided solely by the model ids the platform usage endpoint reports. Several account-period ids of one model fold into a single row (V4.1 Flash's dated id merges with `deepseek-flash`), retired ids are kept out of the row list while their usage still counts toward the month total and the chart, and an unrecognised id becomes its own row as-is — so upgrading dsh never rewrites how your past bills are read.
 
 ## Development
 
