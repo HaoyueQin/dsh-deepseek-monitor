@@ -64,17 +64,20 @@ describe('manifest consistency', () => {
     expect(inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
-  it('keeps peer ranges on the 0.1.5 line only (node-semver pre-release rule)', () => {
+  it('keeps peer ranges on the 0.1.5 + 0.1.6 lines (node-semver pre-release rule)', () => {
     // node-semver admits a pre-release only when a comparator shares its
     // [major, minor, patch] tuple — so the 0.1.5-alpha.x kernels need the
-    // ^0.1.5-alpha.1 arm, which also covers 0.1.5 stable when it lands.
+    // ^0.1.5-alpha.1 arm (which also covers 0.1.5 stable when it lands) and
+    // the 0.1.6-alpha.x kernels need the ^0.1.6-alpha.1 arm. One codebase
+    // serves both lines: the 0.1.6-alpha.1 audit found no breaking change on
+    // any consumed contract, so no branching is needed.
     // Older lines (0.1.2-rc.x / 0.1.3-alpha.x and earlier) are intentionally
-    // rejected: their users stay on this plugin's 0.1.5 release. The peer
+    // rejected: their users stay on this plugin's older releases. Each arm's
     // floor deliberately stays at alpha.1 while devDependencies and the build
-    // baseline track 0.1.5-rc.1: the floor is what ALPHA users may install
-    // against, and every 0.1.5 pre-release shares this tuple, so narrowing it
-    // to rc.1 would strand them for no gain.
-    const PEER_RANGE = '^0.1.5-alpha.1'
+    // baseline track 0.1.6-alpha.1: the floor is what ALPHA users may install
+    // against, and every pre-release in a line shares its tuple, so narrowing
+    // it would strand them for no gain.
+    const PEER_RANGE = '^0.1.5-alpha.1 || ^0.1.6-alpha.1'
     const names = [
       '@deepseek-ai/dsh-client-locale',
       '@deepseek-ai/dsh-client-ui-conversation',
@@ -120,18 +123,18 @@ describe('manifest consistency', () => {
     expect(pkg.dsh?.client?.inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
-  it('declares the 0.1.5-only kernel range in dsh.plugin.json engines', () => {
+  it('declares the 0.1.5 + 0.1.6 kernel range in dsh.plugin.json engines', () => {
     // The README 版本兼容 section quotes engines.dsh as the support range;
-    // lock it so the manifest and the docs cannot drift from the 0.1.5-only
+    // lock it so the manifest and the docs cannot drift from the dual-line
     // support policy. (Declarative metadata: no host reads engines today.)
     // The range is the SUPPORT floor, not the build baseline — the latter is
-    // package.json devDependencies, pinned to 0.1.5-rc.1.
-    expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1')
+    // package.json devDependencies, pinned to 0.1.6-alpha.1.
+    expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1 || ^0.1.6-alpha.1')
   })
 
   it('keeps CLIENT_EXTERNALS covering the shell platform table', () => {
     // tsdown.config.ts mirrors the shell PLATFORM_MODULES from dsh-client-web
-    // (packages/client/web/src/platform.ts on the 0.1.5-rc.1 baseline).
+    // (packages/client/web/src/platform.ts on the 0.1.6-alpha.1 baseline).
     // A dropped entry silently inlines or trips the purity gate, so lock the
     // known-good set here; when the shell adds a module, mirror it there
     // and extend this list.
