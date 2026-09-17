@@ -67,7 +67,7 @@ jobs:
             echo ""
             echo "## 兼容性提示 / Compatibility notice"
             echo ""
-            echo "- 仅支持 DeepSeek Harness **0.1.5 版本线**（peer 范围 \`^0.1.5-alpha.1\` 覆盖 0.1.5-alpha.1 及其后 0.1.5 pre-release 与正式版）。版本支持与模型行口径详见 README 的「版本兼容」章节。旧版内核（0.1.2-rc.x / 0.1.3-alpha.x 及更早）请安装更早的 release。"
-            echo "- Requires DeepSeek Harness on the **0.1.5 line only** (peer range \`^0.1.5-alpha.1\` covers 0.1.5-alpha.1 and later 0.1.5 pre-releases, plus 0.1.5 stable). See the README's Version compatibility section for the support range and for how model rows are mapped; users on older kernels (0.1.2-rc.x / 0.1.3-alpha.x and earlier) should install an earlier release."
+            echo "- 支持 DeepSeek Harness **0.1.5 与 0.1.6 版本线**（peer 范围 \`^0.1.5-alpha.1 || ^0.1.6-alpha.1\`，按 node-semver 规则每条线自 alpha.1 起的 pre-release 与正式版均覆盖）。版本支持与模型行口径详见 README 的「版本兼容」章节。旧版内核（0.1.2-rc.x / 0.1.3-alpha.x 及更早）请安装更早的 release。"
+            echo "- Requires DeepSeek Harness on the **0.1.5 or 0.1.6 line** (peer range \`^0.1.5-alpha.1 || ^0.1.6-alpha.1\`; per node-semver rules each line covers its pre-releases from alpha.1 plus its stable release). See the README's Version compatibility section for the support range and for how model rows are mapped; users on older kernels (0.1.2-rc.x / 0.1.3-alpha.x and earlier) should install an earlier release."
           } >> release-notes.md
           gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md

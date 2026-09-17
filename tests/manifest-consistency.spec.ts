@@ -69,12 +69,12 @@ describe('manifest consistency', () => {
     // [major, minor, patch] tuple — so the 0.1.5-alpha.x kernels need the
     // ^0.1.5-alpha.1 arm (which also covers 0.1.5 stable when it lands) and
     // the 0.1.6-alpha.x kernels need the ^0.1.6-alpha.1 arm. One codebase
-    // serves both lines: the 0.1.6-alpha.1 audit found no breaking change on
+    // serves both lines: the 0.1.6-alpha.2 audit found no breaking change on
     // any consumed contract, so no branching is needed.
     // Older lines (0.1.2-rc.x / 0.1.3-alpha.x and earlier) are intentionally
     // rejected: their users stay on this plugin's older releases. Each arm's
     // floor deliberately stays at alpha.1 while devDependencies and the build
-    // baseline track 0.1.6-alpha.1: the floor is what ALPHA users may install
+    // baseline track 0.1.6-alpha.2: the floor is what ALPHA users may install
     // against, and every pre-release in a line shares its tuple, so narrowing
     // it would strand them for no gain.
     const PEER_RANGE = '^0.1.5-alpha.1 || ^0.1.6-alpha.1'
@@ -128,13 +128,13 @@ describe('manifest consistency', () => {
     // lock it so the manifest and the docs cannot drift from the dual-line
     // support policy. (Declarative metadata: no host reads engines today.)
     // The range is the SUPPORT floor, not the build baseline — the latter is
-    // package.json devDependencies, pinned to 0.1.6-alpha.1.
+    // package.json devDependencies, pinned to 0.1.6-alpha.2.
     expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1 || ^0.1.6-alpha.1')
   })
 
   it('keeps CLIENT_EXTERNALS covering the shell platform table', () => {
     // tsdown.config.ts mirrors the shell PLATFORM_MODULES from dsh-client-web
-    // (packages/client/web/src/platform.ts on the 0.1.6-alpha.1 baseline).
+    // (packages/client/web/src/platform.ts on the 0.1.6-alpha.2 baseline).
     // A dropped entry silently inlines or trips the purity gate, so lock the
     // known-good set here; when the shell adds a module, mirror it there
     // and extend this list.

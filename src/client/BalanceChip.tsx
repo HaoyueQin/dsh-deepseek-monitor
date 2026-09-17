@@ -1,8 +1,8 @@
 /**
  * The composer tool-row balance chip: the official `conversation.input.right`
  * seat, whose entries the host renders immediately LEFT of the model name
- * (InputBar's trailing group: rightItems → model select → context meter →
- * send). A real flex child of the trailing group — no absolute positioning,
+ * (InputBar's trailing group: rightItems → model select → send). A real flex
+ * child of the trailing group — no absolute positioning,
  * no host-DOM injection, no geometry measurement — so it inherits the row's
  * 12px control gap and can never overlap its neighbors.
  *
