@@ -2,6 +2,7 @@
   "name": "dsh-deepseek-monitor",
   "version": "0.1.7",
   "description": "DSH web plugin: DeepSeek balance & platform usage monitoring, integrated into the Models settings provider row and the composer tool row (left of the model name). Replicates the DeepSeekMonitorWindows backend.",
+  "icon": "./icon.svg",
   "homepage": "https://github.com/HaoyueQin/dsh-deepseek-monitor#readme",
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
       "types": "./lib/types/client/index.d.ts",
       "default": "./lib/client.js"
     },
+    "./locale/*.json": "./locale/*.json",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
@@ -49,6 +51,8 @@
     "lib/client-registry.js",
     "lib/types/**/*.d.ts",
     "src",
+    "locale/*.json",
+    "icon.svg",
     "cordis.patch.yml",
     "dsh.plugin.json",
     "README.md",

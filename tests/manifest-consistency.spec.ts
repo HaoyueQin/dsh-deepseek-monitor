@@ -12,6 +12,7 @@ const pkg = JSON.parse(read('package.json')) as {
   version: string
   name: string
   main: string
+  icon?: string
   files: string[]
   exports: Record<string, { default?: string } | string | undefined>
   dsh?: { bundle?: { patch?: string }, client?: { platform?: string, inject?: string[] } }
@@ -49,6 +50,40 @@ describe('manifest consistency', () => {
     expect(files).toContain('dsh.plugin.json')
     expect(files).toContain('cordis.patch.yml')
     expect(pkg.main).toBe('lib/index.js')
+  })
+
+  it('declares the plugin-card display metadata (icon + exported locale dictionaries)', () => {
+    // The Host reads this metadata WITHOUT evaluating plugin code
+    // (packages/boot/app-boot/src/package-meta.ts): it resolves
+    // `${name}/locale/en.json` as the discovery entry through the package
+    // `exports`, reads each sibling dictionary's meta.title/description, and
+    // turns package.json's relative `icon` into a data URL for the card. A
+    // resource the package does not export and publish is invisible.
+    expect(pkg.icon).toBe('./icon.svg')
+    expect(pkg.exports?.['./locale/*.json']).toBe('./locale/*.json')
+    expect(pkg.files).toContain('icon.svg')
+    expect(pkg.files).toContain('locale/*.json')
+
+    // The icon must be a self-contained SVG inside the manifest directory:
+    // the Host rejects absolute paths, URLs, other extensions, symlinks that
+    // escape the directory, and anything above 256 KiB.
+    const icon = read('icon.svg')
+    expect(icon.startsWith('<svg')).toBe(true)
+    expect(Buffer.byteLength(icon, 'utf8')).toBeLessThan(256 * 1024)
+
+    // File names must be language ids (the Host's LANGUAGE_ID pattern), and
+    // `en` is the discovery baseline: without it the Host reads no dictionary
+    // and the card falls back to the package name.
+    for (const language of ['en', 'zh', 'zh-TW']) {
+      expect(language).toMatch(/^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/u)
+      const dictionary = JSON.parse(read(`locale/${language}.json`)) as {
+        meta?: { title?: unknown, description?: unknown }
+      }
+      expect(typeof dictionary.meta?.title).toBe('string')
+      expect(dictionary.meta?.title).not.toBe('')
+      expect(typeof dictionary.meta?.description).toBe('string')
+      expect(dictionary.meta?.description).not.toBe('')
+    }
   })
 
   it('keeps the rc.1+ client assembly channel coherent (dsh.client / exports)', () => {

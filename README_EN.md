@@ -94,7 +94,7 @@ The balance / platform-usage backend and the dashboard structure were ported fro
 | [HaoyueQin/DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) | **Direct port source**: the TypeScript port base for do_fetch_balance / do_fetch_usage, the token semantics and the dashboard structure | MIT |
 | [Joyi-code/DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) | **Direct upstream** of that desktop app (the Windows Tauri 2 rebuild) — where the ported logic ultimately comes from | MIT |
 | [JayHome137/DeepSeekMonitor](https://github.com/JayHome137/DeepSeekMonitor) | Origin of the lineage (macOS menu-bar + WidgetKit), which pioneered DeepSeek balance & usage monitoring | MIT |
-| [lucide](https://lucide.dev/) | SVG icon library | ISC |
+| [lucide](https://lucide.dev/) | SVG icon library: the panel's model-row icons, plus the plugin-card `icon.svg` (camera geometry adapted from lucide's `cctv`; the ISC notice stays inside that file) | ISC |
 
 Released under [MIT](./LICENSE); the MIT notices of the projects above are preserved with any distribution.
 

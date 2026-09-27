@@ -94,7 +94,7 @@ GUI 取证脚本（无头浏览器验证面板挂载与样式）：`node scripts
 | [HaoyueQin/DeepSeekMonitorWindows](https://github.com/HaoyueQin/DeepSeekMonitorWindows) | **直接移植来源**：`do_fetch_balance` / `do_fetch_usage` / token 口径与仪表盘结构的 TypeScript 移植底本 | MIT |
 | [Joyi-code/DeepSeekMonitorWindows](https://github.com/Joyi-code/DeepSeekMonitorWindows) | 上述桌面版的**直接上游**（Windows Tauri 2 重构），移植逻辑的最终出处 | MIT |
 | [JayHome137/DeepSeekMonitor](https://github.com/JayHome137/DeepSeekMonitor) | 谱系起点（macOS 菜单栏 + WidgetKit 版），开创了「DeepSeek 余额与用量监控」这一形态 | MIT |
-| [lucide](https://lucide.dev/) | SVG 图标库 | ISC |
+| [lucide](https://lucide.dev/) | SVG 图标库：面板内模型行图标，以及插件卡片图标 `icon.svg`（摄像头几何改编自其 `cctv`，ISC 声明随文件保留） | ISC |
 
 本项目基于 [MIT](./LICENSE) 发布，上述 MIT 项目许可声明随分发一并保留。
 
