@@ -69,7 +69,7 @@ dsh plugin --profile <name> add dsh-deepseek-monitor@latest
 
 ## 版本兼容
 
-- **支持 DeepSeek Harness 0.1.5 与 0.1.6 版本线**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.5-alpha.1 || ^0.1.6-alpha.1`）。按 node-semver 规则，每个分支覆盖其 alpha.1 起的 pre-release 与后续正式版；地板值刻意保持在 alpha.1（alpha.x 内核同样受支持，收窄它没有收益）。构建基线固定在 0.1.6-alpha.2（devDependencies），即按当前受支持内核的最新 pre-release 编译。
+- **支持 DeepSeek Harness 0.1.5、0.1.6 与 0.2.0 版本线**（`dsh.plugin.json` 的 `engines.dsh` 与此声明一致，peer 范围为 `^0.1.5-alpha.1 || ^0.1.6-alpha.1 || ^0.2.0-rc.1`）。按 node-semver 规则，每个分支覆盖其首个 pre-release 起的同线版本与后续正式版（0.2.0 分支同时覆盖 0.2.0 正式版与 rc.x）；地板值刻意保持在各线首个 pre-release（早期内核同样受支持，收窄它没有收益）。构建基线固定在 0.2.0-rc.1（devDependencies），即按当前受支持内核的最新 pre-release 编译。0.1.7 内核（alpha.1–rc.2）落在 0.1.6 分支的匹配区间内、DSH 的兼容门禁同样放行，其内核差异已包含在 0.2.0-rc.1 的契约审计中。
 - **旧版 DeepSeek Harness 用户**（0.1.2-rc.x / 0.1.3-alpha.x 及更早）：请安装本插件的**旧版本**（0.1.2/0.1.3 内核请用 [v0.1.5](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.5)，更早内核请用 [v0.1.4](https://github.com/HaoyueQin/dsh-deepseek-monitor/releases/tag/v0.1.4)）。
 - **模型行口径不随 dsh 内核版本变化**：面板的行只由平台用量接口返回的模型 id 决定。平台把一个模型的多个账期 id 映射到同一行（例如 V4.1 Flash 的到期 id 与 `deepseek-flash` 合并），把已退役的 id 排除在行外（其用量仍计入总额与图表），未识别的 id 则原样成行 —— 因此升级 dsh 不会改写你看到的历史账单口径。
 

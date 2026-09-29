@@ -99,20 +99,24 @@ describe('manifest consistency', () => {
     expect(inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
-  it('keeps peer ranges on the 0.1.5 + 0.1.6 lines (node-semver pre-release rule)', () => {
+  it('keeps peer ranges on the 0.1.5 + 0.1.6 + 0.2.0 lines (node-semver pre-release rule)', () => {
     // node-semver admits a pre-release only when a comparator shares its
-    // [major, minor, patch] tuple — so the 0.1.5-alpha.x kernels need the
-    // ^0.1.5-alpha.1 arm (which also covers 0.1.5 stable when it lands) and
-    // the 0.1.6-alpha.x kernels need the ^0.1.6-alpha.1 arm. One codebase
-    // serves both lines: the 0.1.6-alpha.2 audit found no breaking change on
-    // any consumed contract, so no branching is needed.
+    // [major, minor, patch] tuple — so each kernel line needs its own arm:
+    // the 0.1.5-alpha.x kernels need ^0.1.5-alpha.1 (which also covers 0.1.5
+    // stable), the 0.1.6-alpha.x kernels need ^0.1.6-alpha.1, and the
+    // 0.2.0-rc.x kernels need ^0.2.0-rc.1 (which also covers 0.2.0 stable).
+    // A caret with a pre-release floor expands its upper bound to
+    // <next-minor.0-0, so no 0.1.x arm admits a 0.2.0 pre-release — and
+    // ^0.2.0 alone would reject the rcs as well. One codebase serves all
+    // three lines: the 0.2.0-rc.1 audit found no breaking change on any
+    // consumed contract, so no branching is needed.
     // Older lines (0.1.2-rc.x / 0.1.3-alpha.x and earlier) are intentionally
     // rejected: their users stay on this plugin's older releases. Each arm's
-    // floor deliberately stays at alpha.1 while devDependencies and the build
-    // baseline track 0.1.6-alpha.2: the floor is what ALPHA users may install
-    // against, and every pre-release in a line shares its tuple, so narrowing
-    // it would strand them for no gain.
-    const PEER_RANGE = '^0.1.5-alpha.1 || ^0.1.6-alpha.1'
+    // floor deliberately stays at the line's first pre-release while
+    // devDependencies and the build baseline track 0.2.0-rc.1: the floor is
+    // what early adopters may install against, and every pre-release in a
+    // line shares its tuple, so narrowing it would strand them for no gain.
+    const PEER_RANGE = '^0.1.5-alpha.1 || ^0.1.6-alpha.1 || ^0.2.0-rc.1'
     const names = [
       '@deepseek-ai/dsh-client-locale',
       '@deepseek-ai/dsh-client-ui-conversation',
@@ -158,13 +162,13 @@ describe('manifest consistency', () => {
     expect(pkg.dsh?.client?.inject).toContain('@deepseek-ai/dsh-client-ui-renderer')
   })
 
-  it('declares the 0.1.5 + 0.1.6 kernel range in dsh.plugin.json engines', () => {
+  it('declares the 0.1.5 + 0.1.6 + 0.2.0 kernel range in dsh.plugin.json engines', () => {
     // The README 版本兼容 section quotes engines.dsh as the support range;
-    // lock it so the manifest and the docs cannot drift from the dual-line
+    // lock it so the manifest and the docs cannot drift from the three-line
     // support policy. (Declarative metadata: no host reads engines today.)
     // The range is the SUPPORT floor, not the build baseline — the latter is
-    // package.json devDependencies, pinned to 0.1.6-alpha.2.
-    expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1 || ^0.1.6-alpha.1')
+    // package.json devDependencies, pinned to 0.2.0-rc.1.
+    expect(manifest.engines?.dsh).toBe('^0.1.5-alpha.1 || ^0.1.6-alpha.1 || ^0.2.0-rc.1')
   })
 
   it('keeps CLIENT_EXTERNALS covering the shell platform table', () => {
